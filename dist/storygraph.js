@@ -3,6 +3,7 @@
   let localCheckTimer;
   let resultPollTimer;
   let activeCheckId;
+  let hydratedBookKey;
   const clean = (value) => value?.replace(/\s+/g, " ").trim() ?? "";
   const findLabeledValue = (label) => {
     const match = document.body.innerText.match(new RegExp(`${label}:\\s*([^\\n]+)`, "i"));
@@ -47,6 +48,7 @@
     TIMED_OUT: "Amazon check timed out — try again"
   })[result.status] ?? "Kindle Unlimited status unknown";
   const sameBook = (a, b) => clean(a.title).toLowerCase() === clean(b.title).toLowerCase() && clean(a.author).toLowerCase() === clean(b.author).toLowerCase();
+  const bookKey = (book) => `${clean(book.title).toLowerCase()}::${clean(book.author).toLowerCase()}`;
 
   const applyResult = (result) => {
     const currentBook = extractBook();
@@ -112,6 +114,16 @@
     });
     root.append(button);
     findBookHeading(book.title)?.insertAdjacentElement("afterend", root);
+
+    if (!result) {
+      const key = bookKey(book);
+      if (hydratedBookKey !== key) {
+        hydratedBookKey = key;
+        void chrome.runtime.sendMessage({ type: "GET_CACHED_RESULT", book }).then((response) => {
+          if (response?.result && sameBook(extractBook() ?? book, response.result.book)) render(response.result);
+        }).catch(() => undefined);
+      }
+    }
   };
 
   chrome.runtime.onMessage.addListener((message) => {
@@ -121,14 +133,17 @@
   });
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "local" || !activeCheckId) return;
-    const change = changes[`delivery:v6:${activeCheckId}`];
+    const change = changes[`delivery:v7:${activeCheckId}`];
     if (change?.newValue) applyResult(change.newValue);
   });
 
   let previousUrl = location.href;
   let renderTimer;
   new MutationObserver(() => {
-    if (previousUrl !== location.href) previousUrl = location.href;
+    if (previousUrl !== location.href) {
+      previousUrl = location.href;
+      hydratedBookKey = undefined;
+    }
     clearTimeout(renderTimer);
     renderTimer = setTimeout(() => {
       if (!document.getElementById(ROOT_ID)) render();

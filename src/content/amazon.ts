@@ -2,42 +2,78 @@ import type { BookIdentity, KuCheckResult } from "../domain/book";
 import { normalizeText } from "../domain/normalize";
 import type { ExtensionMessage } from "../shared/messages";
 
-const KU_PATTERNS = [
+const STRONG_KU_PATTERNS = [
   /included\s+with\s+kindle\s+unlimited/i,
-  /kindle\s+unlimited/i,
+  /read\s+(?:and\s+listen\s+)?for\s+free\s+with\s+kindle\s+unlimited/i,
   /read\s+for\s+free/i,
-  /\$0\.00\s+(?:to\s+buy\s+)?(?:with|after)\s+kindle\s+unlimited/i
+  /\$0\.00\s+(?:to\s+buy\s+)?(?:with|after)\s+kindle\s+unlimited/i,
+  /borrow\s+for\s+free\s+with\s+kindle\s+unlimited/i
 ];
+
+const KU_BADGE_PATTERN = /kindle[\s_-]*unlimited/i;
 
 const OFFER_SELECTORS = [
   "#buybox",
   "#buyBoxAccordion",
+  "#desktop_buybox",
+  "#rightCol",
   "#tmmSwatches",
+  "#tmm-grid-swatch-KINDLE",
   "#formats",
   "#mediaTab_content_landing",
   "#digitalDashHighProminenceBadge",
   "#kindleUnlimitedBadge",
+  "#kindle-unlimited",
   "[data-a-expander-name='kindleUnlimited']",
   "[data-csa-c-content-id*='kindle']",
+  "[data-csa-c-type*='kindle']",
   "[id*='kindleUnlimited']",
-  "[class*='kindleUnlimited']"
+  "[id*='kindle-unlimited']",
+  "[class*='kindleUnlimited']",
+  "[class*='kindle-unlimited']",
+  "[aria-label*='Kindle Unlimited' i]",
+  "[title*='Kindle Unlimited' i]",
+  "img[alt*='Kindle Unlimited' i]",
+  "img[src*='kindle-unlimited' i]",
+  "img[src*='kindleunlimited' i]"
 ].join(",");
 
 function visibleText(node: HTMLElement): string {
   const style = getComputedStyle(node);
-  if (style.display === "none" || style.visibility === "hidden") return "";
+  if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") return "";
   return node.innerText?.replace(/\s+/g, " ").trim() ?? "";
+}
+
+function addPatternEvidence(text: string, evidence: Set<string>): void {
+  for (const pattern of STRONG_KU_PATTERNS) {
+    const match = text.match(pattern)?.[0];
+    if (match) evidence.add(match);
+  }
 }
 
 function collectEvidence(root: ParentNode = document): string[] {
   const evidence = new Set<string>();
 
+  // Strong phrases are sufficiently product-specific to scan across the page.
+  const bodyText = document.body?.innerText?.replace(/\s+/g, " ") ?? "";
+  addPatternEvidence(bodyText, evidence);
+
   for (const node of root.querySelectorAll<HTMLElement>(OFFER_SELECTORS)) {
     const text = visibleText(node);
-    if (!text) continue;
-    for (const pattern of KU_PATTERNS) {
-      const match = text.match(pattern)?.[0];
-      if (match) evidence.add(match);
+    if (text) {
+      addPatternEvidence(text, evidence);
+      if (KU_BADGE_PATTERN.test(text)) evidence.add("Kindle Unlimited offer");
+    }
+
+    const attributes = [
+      node.getAttribute("aria-label"),
+      node.getAttribute("title"),
+      node.getAttribute("alt"),
+      node.getAttribute("src")
+    ].filter((value): value is string => Boolean(value));
+
+    if (attributes.some((value) => KU_BADGE_PATTERN.test(value))) {
+      evidence.add("Kindle Unlimited badge");
     }
   }
 
@@ -46,13 +82,6 @@ function collectEvidence(root: ParentNode = document): string[] {
 
 function productTitle(): string | undefined {
   return document.querySelector<HTMLElement>("#productTitle, #ebooksProductTitle, h1")?.innerText.trim();
-}
-
-function productAuthor(): string {
-  return [...document.querySelectorAll<HTMLElement>("#bylineInfo a, .author a, a.contributorNameID")]
-    .map((node) => node.innerText.trim())
-    .filter(Boolean)
-    .join(" ");
 }
 
 function appendPayload(url: string, book: BookIdentity, checkId: string): string {
@@ -94,73 +123,12 @@ function navigateToBestSearchResult(book: BookIdentity, checkId: string): boolea
   return true;
 }
 
-function meaningfulTokens(value: string): string[] {
-  return normalizeText(value)
-    .split(" ")
-    .filter((token) => token.length > 1 && !["a", "an", "the", "novel", "book", "edition", "author"].includes(token));
-}
-
-function tokenCoverage(expected: string[], actual: string[]): number {
-  if (expected.length === 0) return 0;
-  const actualSet = new Set(actual);
-  return expected.filter((token) => actualSet.has(token)).length / expected.length;
-}
-
-function titleMatchScore(expectedValue: string, actualValue: string): number {
-  const expected = normalizeText(expectedValue);
-  const actual = normalizeText(actualValue);
-  if (!expected || !actual) return 0;
-  if (expected === actual) return 1;
-  if (actual.startsWith(`${expected} `) || actual.includes(` ${expected} `)) return 0.98;
-  if (actual.includes(expected)) return 0.96;
-
-  const expectedTokens = meaningfulTokens(expected);
-  const actualTokens = meaningfulTokens(actual);
-  const coverage = tokenCoverage(expectedTokens, actualTokens);
-  const ordered = expectedTokens.join(" ");
-  const actualJoined = actualTokens.join(" ");
-
-  if (ordered && actualJoined.includes(ordered)) return Math.max(coverage, 0.94);
-  return coverage;
-}
-
-function authorMatchScore(expectedValue: string, actualValue: string): number {
-  const expected = normalizeText(expectedValue)
-    .replace(/\b(author|editor|illustrator|narrator|contributor)\b/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  const actual = normalizeText(actualValue)
-    .replace(/\b(author|editor|illustrator|narrator|contributor|visit|amazon|page)\b/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!expected) return 1;
-  if (!actual) return 0.65;
-  if (actual.includes(expected) || expected.includes(actual)) return 1;
-
-  const expectedTokens = meaningfulTokens(expected);
-  const actualTokens = meaningfulTokens(actual);
-  const coverage = tokenCoverage(expectedTokens, actualTokens);
-  const expectedSurname = expectedTokens.at(-1);
-  const surnameMatches = Boolean(expectedSurname && actualTokens.includes(expectedSurname));
-
-  if (surnameMatches && coverage >= 0.5) return Math.max(coverage, 0.85);
-  return coverage;
-}
-
-function productMatchConfidence(book: BookIdentity): { confidence: number; titleScore: number; authorScore: number } {
-  const titleScore = titleMatchScore(book.title, productTitle() ?? "");
-  const authorScore = authorMatchScore(book.author, productAuthor());
-  const confidence = titleScore * 0.78 + authorScore * 0.22;
-  return { confidence, titleScore, authorScore };
-}
-
-function productMatchesBook(book: BookIdentity): boolean {
-  const { confidence, titleScore, authorScore } = productMatchConfidence(book);
-  return titleScore >= 0.78 && authorScore >= 0.5 && confidence >= 0.75;
-}
-
-async function sendResult(book: BookIdentity, checkId: string, status: KuCheckResult["status"], evidence: string[]): Promise<void> {
+async function sendResult(
+  book: BookIdentity,
+  checkId: string,
+  status: KuCheckResult["status"],
+  evidence: string[]
+): Promise<void> {
   const cleanUrl = new URL(location.href);
   cleanUrl.searchParams.delete("sgku_book");
   cleanUrl.searchParams.delete("sgku_check");
@@ -174,11 +142,7 @@ async function sendResult(book: BookIdentity, checkId: string, status: KuCheckRe
     checkedAt: Date.now()
   };
 
-  const message: ExtensionMessage = {
-    type: "AMAZON_RESULT",
-    payload: result,
-    checkId
-  };
+  const message: ExtensionMessage = { type: "AMAZON_RESULT", payload: result, checkId };
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const response = await chrome.runtime.sendMessage(message).catch(() => null);
     if (response?.ok) return;
@@ -190,45 +154,55 @@ async function sendResult(book: BookIdentity, checkId: string, status: KuCheckRe
 function waitForPage(book: BookIdentity, checkId: string): void {
   const isSearchPage = location.pathname === "/s";
   const startedAt = Date.now();
-  const timeoutMs = 18_000;
-  let readyPolls = 0;
+  const timeoutMs = 30_000;
+  let finished = false;
+
+  const finish = (status: KuCheckResult["status"], evidence: string[]) => {
+    if (finished) return;
+    finished = true;
+    observer.disconnect();
+    void sendResult(book, checkId, status, evidence);
+  };
 
   const check = () => {
+    if (finished) return;
+
     if (isSearchPage) {
       if (navigateToBestSearchResult(book, checkId)) return;
-      if (Date.now() - startedAt < timeoutMs) {
-        window.setTimeout(check, 500);
-        return;
-      }
-      void sendResult(book, checkId, "NO_MATCH", []);
+      if (Date.now() - startedAt >= timeoutMs) finish("NO_MATCH", []);
       return;
     }
 
-    const pageLooksReady = Boolean(document.querySelector("#productTitle, #ebooksProductTitle"));
-    if (pageLooksReady && !productMatchesBook(book)) {
-      const match = productMatchConfidence(book);
-      void sendResult(book, checkId, "UNCERTAIN", [`Amazon match confidence ${match.confidence.toFixed(2)} (title ${match.titleScore.toFixed(2)}, author ${match.authorScore.toFixed(2)})`]);
-      return;
-    }
+    const pageLooksReady = Boolean(
+      document.querySelector("#productTitle, #ebooksProductTitle") ||
+      document.querySelector('link[rel="canonical"][href*="/dp/"]')
+    );
 
     const evidence = collectEvidence();
-    if (evidence.length > 0) {
-      void sendResult(book, checkId, "AVAILABLE", evidence);
+    if (pageLooksReady && evidence.length > 0) {
+      finish("AVAILABLE", evidence);
       return;
     }
 
-    const offerAreaReady = Boolean(document.querySelector(OFFER_SELECTORS));
-    if (pageLooksReady && offerAreaReady) readyPolls += 1;
-
-    // Do not report a negative until the Amazon offer area has been present
-    // across several polls, because it often loads after the product heading.
-    if (readyPolls >= 8 || Date.now() - startedAt >= timeoutMs) {
-      void sendResult(book, checkId, "NOT_DETECTED", []);
-      return;
+    // Do not return a negative merely because one offer container appeared.
+    // Amazon frequently renders the KU option several seconds later.
+    if (pageLooksReady && Date.now() - startedAt >= timeoutMs) {
+      finish("NOT_DETECTED", []);
     }
-
-    window.setTimeout(check, 500);
   };
+
+  const observer = new MutationObserver(check);
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["class", "style", "aria-label", "title", "alt", "src"]
+  });
+
+  const poll = window.setInterval(() => {
+    check();
+    if (finished) window.clearInterval(poll);
+  }, 500);
 
   check();
 }
@@ -248,9 +222,9 @@ async function initializeAmazonCheck(): Promise<void> {
     }
   }
 
-  // Amazon can strip custom query parameters during redirects. Recover the
-  // active check by using this Amazon tab's ID in the service worker.
-  const response = await chrome.runtime.sendMessage({ type: "GET_AMAZON_CHECK" } satisfies ExtensionMessage).catch(() => null);
+  const response = await chrome.runtime
+    .sendMessage({ type: "GET_AMAZON_CHECK" } satisfies ExtensionMessage)
+    .catch(() => null);
   if (response?.ok && response.book && response.checkId) {
     waitForPage(response.book as BookIdentity, response.checkId as string);
   }

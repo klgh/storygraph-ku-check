@@ -1,8 +1,8 @@
 const normalizeText = (value) => value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
-const cacheKey = (book) => `result:v6:${normalizeText(book.title)}:${normalizeText(book.author)}`;
-const pendingKey = (checkId) => `pending:v6:${checkId}`;
-const amazonTabKey = (tabId) => `amazon-tab:v6:${tabId}`;
-const deliveryKey = (checkId) => `delivery:v6:${checkId}`;
+const cacheKey = (book) => `result:v9:${normalizeText(book.title)}:${normalizeText(book.author)}`;
+const pendingKey = (checkId) => `pending:v9:${checkId}`;
+const amazonTabKey = (tabId) => `amazon-tab:v9:${tabId}`;
+const deliveryKey = (checkId) => `delivery:v9:${checkId}`;
 const alarmName = (checkId) => `sgku-timeout:${checkId}`;
 
 const getCached = async (book) => {
@@ -89,6 +89,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const found = await findCheckForAmazonTab(sender.tab.id);
       sendResponse(found ? { ok: true, checkId: found.checkId, book: found.pending.book } : { ok: false });
     })().catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
+  if (message.type === "GET_CACHED_RESULT") {
+    void (async () => {
+      const result = await getCached(message.book);
+      sendResponse({ ok: true, result });
+    })().catch(() => sendResponse({ ok: false, result: null }));
     return true;
   }
 
