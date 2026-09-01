@@ -1,8 +1,8 @@
 const normalizeText = (value) => value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
-const cacheKey = (book) => `result:v9:${normalizeText(book.title)}:${normalizeText(book.author)}`;
-const pendingKey = (checkId) => `pending:v9:${checkId}`;
-const amazonTabKey = (tabId) => `amazon-tab:v9:${tabId}`;
-const deliveryKey = (checkId) => `delivery:v9:${checkId}`;
+const cacheKey = (book) => `result:v8:${normalizeText(book.title)}:${normalizeText(book.author)}`;
+const pendingKey = (checkId) => `pending:v8:${checkId}`;
+const amazonTabKey = (tabId) => `amazon-tab:v8:${tabId}`;
+const deliveryKey = (checkId) => `delivery:v8:${checkId}`;
 const alarmName = (checkId) => `sgku-timeout:${checkId}`;
 
 const getCached = async (book) => {

@@ -12,6 +12,6 @@ Chrome extension MVP that checks whether a StoryGraph book appears to be include
 Load the `dist` directory as an unpacked Chrome extension.
 
 
-## v0.9 matching change
+## v0.8 matching change
 
 After the extension selects a sufficiently strong Amazon search result, the product page is treated as the matched book. Amazon subtitle/byline formatting no longer downgrades every result to “Possible match.” The product page now resolves to **Available on Kindle Unlimited** or **Kindle Unlimited was not detected**.
