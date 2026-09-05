@@ -1,5 +1,8 @@
 import type { BookIdentity, KuCheckResult } from "../domain/book";
+import { extractStoryGraphBook, findBookHeading } from "../domain/storygraph-extract";
 import type { ExtensionMessage } from "../shared/messages";
+
+export { extractStoryGraphBook };
 
 const ROOT_ID = "sg-ku-checker-root";
 let localCheckTimer: number | undefined;
@@ -8,69 +11,6 @@ let resultPollTimer: number | undefined;
 
 function clean(value: string | null | undefined): string {
   return value?.replace(/\s+/g, " ").trim() ?? "";
-}
-
-function findLabeledValue(label: string): string | undefined {
-  const text = document.body.innerText;
-  const match = text.match(new RegExp(`${label}:\\s*([^\\n]+)`, "i"));
-  return clean(match?.[1]) || undefined;
-}
-
-function parseOgTitle(): { title?: string; author?: string } {
-  const raw = clean(document.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.content)
-    .replace(/\s*\|\s*The StoryGraph\s*$/i, "");
-
-  if (!raw) return {};
-
-  const byMatch = raw.match(/^(.*?)\s+by\s+(.+)$/i);
-  if (byMatch) {
-    return { title: clean(byMatch[1]), author: clean(byMatch[2]) };
-  }
-
-  return { title: raw };
-}
-
-function findBookHeading(expectedTitle?: string): HTMLElement | null {
-  const headings = [...document.querySelectorAll<HTMLElement>("h1, h2, h3")];
-  const normalizedExpected = clean(expectedTitle).toLowerCase();
-
-  if (normalizedExpected) {
-    const exact = headings.find((heading) => clean(heading.textContent).toLowerCase() === normalizedExpected);
-    if (exact) return exact;
-  }
-
-  return headings.find((heading) => {
-    const text = clean(heading.textContent);
-    return text && !/^(editions|description|community reviews|content warnings)$/i.test(text);
-  }) ?? null;
-}
-
-function findAuthorNearHeading(heading: HTMLElement | null): string {
-  if (heading) {
-    const container = heading.parentElement;
-    const localAuthor = container?.querySelector<HTMLElement>('a[href*="/authors/"]');
-    const text = clean(localAuthor?.textContent);
-    if (text) return text;
-  }
-
-  return clean(
-    document.querySelector<HTMLElement>('a[href*="/authors/"], [rel="author"]')?.textContent
-  );
-}
-
-export function extractStoryGraphBook(): BookIdentity | null {
-  const metadata = parseOgTitle();
-  const heading = findBookHeading(metadata.title);
-
-  const title = metadata.title || clean(heading?.textContent);
-  const author = metadata.author || findAuthorNearHeading(heading);
-
-  const isbnCandidate = findLabeledValue("ISBN/UID");
-  const isbn = isbnCandidate?.match(/[0-9Xx-]{10,17}/)?.[0]?.replace(/-/g, "");
-
-  if (!title || !author) return null;
-
-  return { title, author, isbn, storygraphUrl: location.href };
 }
 
 function render(result?: KuCheckResult): void {
@@ -130,7 +70,7 @@ function render(result?: KuCheckResult): void {
   });
   root.append(button);
 
-  const heading = findBookHeading(book.title);
+  const heading = findBookHeading(document, book.title);
   heading?.insertAdjacentElement("afterend", root);
 }
 

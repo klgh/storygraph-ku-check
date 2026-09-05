@@ -1,5 +1,5 @@
 import type { BookIdentity, KuCheckResult } from "../domain/book";
-import { normalizeText } from "../domain/normalize";
+import { pickBestSearchResult } from "../domain/amazon-match";
 import type { ExtensionMessage } from "../shared/messages";
 
 const KU_PATTERNS = [
@@ -62,102 +62,12 @@ function appendPayload(url: string, book: BookIdentity, checkId: string): string
   return target.toString();
 }
 
-function scoreResult(result: HTMLElement, book: BookIdentity): number {
-  const title = normalizeText(result.querySelector<HTMLElement>("h2")?.innerText ?? "");
-  const fullText = normalizeText(result.innerText ?? "");
-  const expectedTitle = normalizeText(book.title);
-  const expectedAuthor = normalizeText(book.author);
-
-  let score = 0;
-  if (title === expectedTitle) score += 0.72;
-  else if (title.startsWith(expectedTitle) || expectedTitle.startsWith(title)) score += 0.55;
-  else if (title.includes(expectedTitle) || expectedTitle.includes(title)) score += 0.4;
-
-  if (fullText.includes(expectedAuthor)) score += 0.23;
-  if (result.querySelector('a[href*="/dp/"]')) score += 0.05;
-  return score;
-}
-
 function navigateToBestSearchResult(book: BookIdentity, checkId: string): boolean {
-  const results = [...document.querySelectorAll<HTMLElement>('[data-component-type="s-search-result"]')]
-    .filter((element) => !element.innerText.toLowerCase().includes("sponsored"))
-    .map((element) => ({ element, score: scoreResult(element, book) }))
-    .sort((a, b) => b.score - a.score);
+  const best = pickBestSearchResult(document, book);
+  if (!best) return false;
 
-  const best = results[0];
-  if (!best || best.score < 0.68) return false;
-
-  const link = best.element.querySelector<HTMLAnchorElement>('h2 a[href*="/dp/"], a[href*="/dp/"]');
-  if (!link?.href) return false;
-
-  location.href = appendPayload(link.href, book, checkId);
+  location.href = appendPayload(best.href, book, checkId);
   return true;
-}
-
-function meaningfulTokens(value: string): string[] {
-  return normalizeText(value)
-    .split(" ")
-    .filter((token) => token.length > 1 && !["a", "an", "the", "novel", "book", "edition", "author"].includes(token));
-}
-
-function tokenCoverage(expected: string[], actual: string[]): number {
-  if (expected.length === 0) return 0;
-  const actualSet = new Set(actual);
-  return expected.filter((token) => actualSet.has(token)).length / expected.length;
-}
-
-function titleMatchScore(expectedValue: string, actualValue: string): number {
-  const expected = normalizeText(expectedValue);
-  const actual = normalizeText(actualValue);
-  if (!expected || !actual) return 0;
-  if (expected === actual) return 1;
-  if (actual.startsWith(`${expected} `) || actual.includes(` ${expected} `)) return 0.98;
-  if (actual.includes(expected)) return 0.96;
-
-  const expectedTokens = meaningfulTokens(expected);
-  const actualTokens = meaningfulTokens(actual);
-  const coverage = tokenCoverage(expectedTokens, actualTokens);
-  const ordered = expectedTokens.join(" ");
-  const actualJoined = actualTokens.join(" ");
-
-  if (ordered && actualJoined.includes(ordered)) return Math.max(coverage, 0.94);
-  return coverage;
-}
-
-function authorMatchScore(expectedValue: string, actualValue: string): number {
-  const expected = normalizeText(expectedValue)
-    .replace(/\b(author|editor|illustrator|narrator|contributor)\b/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  const actual = normalizeText(actualValue)
-    .replace(/\b(author|editor|illustrator|narrator|contributor|visit|amazon|page)\b/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!expected) return 1;
-  if (!actual) return 0.65;
-  if (actual.includes(expected) || expected.includes(actual)) return 1;
-
-  const expectedTokens = meaningfulTokens(expected);
-  const actualTokens = meaningfulTokens(actual);
-  const coverage = tokenCoverage(expectedTokens, actualTokens);
-  const expectedSurname = expectedTokens.at(-1);
-  const surnameMatches = Boolean(expectedSurname && actualTokens.includes(expectedSurname));
-
-  if (surnameMatches && coverage >= 0.5) return Math.max(coverage, 0.85);
-  return coverage;
-}
-
-function productMatchConfidence(book: BookIdentity): { confidence: number; titleScore: number; authorScore: number } {
-  const titleScore = titleMatchScore(book.title, productTitle() ?? "");
-  const authorScore = authorMatchScore(book.author, productAuthor());
-  const confidence = titleScore * 0.78 + authorScore * 0.22;
-  return { confidence, titleScore, authorScore };
-}
-
-function productMatchesBook(book: BookIdentity): boolean {
-  const { confidence, titleScore, authorScore } = productMatchConfidence(book);
-  return titleScore >= 0.78 && authorScore >= 0.5 && confidence >= 0.75;
 }
 
 async function sendResult(book: BookIdentity, checkId: string, status: KuCheckResult["status"], evidence: string[]): Promise<void> {
