@@ -1,153 +1,16 @@
-(() => {
-  const ROOT_ID = "sg-ku-checker-root";
-  let localCheckTimer;
-  let resultPollTimer;
-  let activeCheckId;
-  let hydratedBookKey;
-  const clean = (value) => value?.replace(/\s+/g, " ").trim() ?? "";
-  const findLabeledValue = (label) => {
-    const match = document.body.innerText.match(new RegExp(`${label}:\\s*([^\\n]+)`, "i"));
-    return clean(match?.[1]) || undefined;
-  };
-  const parseOgTitle = () => {
-    const raw = clean(document.querySelector('meta[property="og:title"]')?.content).replace(/\s*\|\s*The StoryGraph\s*$/i, "");
-    if (!raw) return {};
-    const byMatch = raw.match(/^(.*?)\s+by\s+(.+)$/i);
-    return byMatch ? { title: clean(byMatch[1]), author: clean(byMatch[2]) } : { title: raw };
-  };
-  const findBookHeading = (expectedTitle) => {
-    const headings = [...document.querySelectorAll("h1, h2, h3")];
-    const expected = clean(expectedTitle).toLowerCase();
-    if (expected) {
-      const exact = headings.find((heading) => clean(heading.textContent).toLowerCase() === expected);
-      if (exact) return exact;
-    }
-    return headings.find((heading) => {
-      const text = clean(heading.textContent);
-      return text && !/^(editions|description|community reviews|content warnings)$/i.test(text);
-    }) ?? null;
-  };
-  const findAuthorNearHeading = (heading) => {
-    const local = heading?.parentElement?.querySelector('a[href*="/authors/"]');
-    const localText = clean(local?.textContent);
-    return localText || clean(document.querySelector('a[href*="/authors/"], [rel="author"]')?.textContent);
-  };
-  const extractBook = () => {
-    const metadata = parseOgTitle();
-    const heading = findBookHeading(metadata.title);
-    const title = metadata.title || clean(heading?.textContent);
-    const author = metadata.author || findAuthorNearHeading(heading);
-    const isbn = findLabeledValue("ISBN/UID")?.match(/[0-9Xx-]{10,17}/)?.[0]?.replace(/-/g, "");
-    return title && author ? { title, author, isbn, storygraphUrl: location.href } : null;
-  };
-  const statusLabel = (result) => ({
-    AVAILABLE: "Available on Kindle Unlimited",
-    NOT_DETECTED: "Kindle Unlimited was not detected",
-    UNCERTAIN: "Possible match; verify on Amazon",
-    NO_MATCH: "No matching Kindle result found",
-    TIMED_OUT: "Amazon check timed out — try again"
-  })[result.status] ?? "Kindle Unlimited status unknown";
-  const sameBook = (a, b) => clean(a.title).toLowerCase() === clean(b.title).toLowerCase() && clean(a.author).toLowerCase() === clean(b.author).toLowerCase();
-  const bookKey = (book) => `${clean(book.title).toLowerCase()}::${clean(book.author).toLowerCase()}`;
-
-  const applyResult = (result) => {
-    const currentBook = extractBook();
-    if (!currentBook || !sameBook(currentBook, result.book)) return;
-    clearTimeout(localCheckTimer);
-    clearTimeout(resultPollTimer);
-    activeCheckId = undefined;
-    render(result);
-  };
-
-  const startResultPolling = (checkId) => {
-    clearTimeout(resultPollTimer);
-    const startedAt = Date.now();
-    const poll = async () => {
-      if (activeCheckId !== checkId) return;
-      const response = await chrome.runtime.sendMessage({ type: "GET_CHECK_RESULT", checkId }).catch(() => null);
-      if (response?.result) {
-        applyResult(response.result);
-        return;
-      }
-      if (Date.now() - startedAt < 50000) resultPollTimer = setTimeout(poll, 1000);
-    };
-    void poll();
-  };
-
-  const render = (result) => {
-    const book = extractBook();
-    if (!book) return;
-    document.getElementById(ROOT_ID)?.remove();
-    const root = document.createElement("section");
-    root.id = ROOT_ID;
-    root.style.cssText = "margin:12px 0;padding:12px;border:1px solid currentColor;border-radius:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap";
-    const status = document.createElement("span");
-    status.textContent = result ? statusLabel(result) : "Kindle Unlimited status not checked";
-    root.append(status);
-    if (result?.amazonUrl) {
-      const link = document.createElement("a");
-      link.href = result.amazonUrl;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.textContent = "View on Amazon";
-      root.append(link);
-    }
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = "Check Kindle Unlimited";
-    button.addEventListener("click", async () => {
-      button.disabled = true;
-      status.textContent = "Checking Kindle Unlimited…";
-      const response = await chrome.runtime.sendMessage({ type: "CHECK_BOOK", payload: book }).catch(() => null);
-      if (!response?.ok || !response.checkId) {
-        button.disabled = false;
-        status.textContent = "Unable to start check";
-        return;
-      }
-      activeCheckId = response.checkId;
-      startResultPolling(activeCheckId);
-      clearTimeout(localCheckTimer);
-      localCheckTimer = setTimeout(() => {
-        button.disabled = false;
-        status.textContent = "Amazon has not responded — try again";
-      }, 50000);
-    });
-    root.append(button);
-    findBookHeading(book.title)?.insertAdjacentElement("afterend", root);
-
-    if (!result) {
-      const key = bookKey(book);
-      if (hydratedBookKey !== key) {
-        hydratedBookKey = key;
-        void chrome.runtime.sendMessage({ type: "GET_CACHED_RESULT", book }).then((response) => {
-          if (response?.result && sameBook(extractBook() ?? book, response.result.book)) render(response.result);
-        }).catch(() => undefined);
-      }
-    }
-  };
-
-  chrome.runtime.onMessage.addListener((message) => {
-    if (message.type !== "KU_RESULT") return;
-    if (activeCheckId && message.checkId !== activeCheckId) return;
-    applyResult(message.payload);
-  });
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName !== "local" || !activeCheckId) return;
-    const change = changes[`delivery:v7:${activeCheckId}`];
-    if (change?.newValue) applyResult(change.newValue);
-  });
-
-  let previousUrl = location.href;
-  let renderTimer;
-  new MutationObserver(() => {
-    if (previousUrl !== location.href) {
-      previousUrl = location.href;
-      hydratedBookKey = undefined;
-    }
-    clearTimeout(renderTimer);
-    renderTimer = setTimeout(() => {
-      if (!document.getElementById(ROOT_ID)) render();
-    }, 300);
-  }).observe(document.documentElement, { childList: true, subtree: true });
-  render();
-})();
+(function(){"use strict";function i(e){return(e==null?void 0:e.replace(/\s+/g," ").trim())??""}function T(e){const t=e.body;return t&&(t.innerText||t.textContent)||""}function E(e,t){const n=T(e).match(new RegExp(`${t}:\\s*([^\\n]+)`,"i"));return i(n==null?void 0:n[1])||void 0}function z(e){var r;const t=i((r=e.querySelector('meta[property="og:title"]'))==null?void 0:r.content).replace(/\s*\|\s*The StoryGraph\s*$/i,"");if(!t)return{};const n=t.match(/^(.*?)\s+by\s+(.+)$/i);return n?{title:i(n[1]),author:i(n[2])}:{title:t}}function b(e,t){const n=[...e.querySelectorAll("h1, h2, h3")],r=i(t).toLowerCase();if(r){const o=n.find(a=>i(a.textContent).toLowerCase()===r);if(o)return o}return n.find(o=>{const a=i(o.textContent);return a&&!/^(editions|description|community reviews|content warnings)$/i.test(a)})??null}function A(e,t){var n;if(t){const r=t.parentElement,o=r==null?void 0:r.querySelector('a[href*="/authors/"]'),a=i(o==null?void 0:o.textContent);if(a)return a}return i((n=e.querySelector('a[href*="/authors/"], [rel="author"]'))==null?void 0:n.textContent)}function k(e=document,t=(n=>(n=e.defaultView)==null?void 0:n.location.href)()??location.href){var w,x;const r=z(e),o=b(e,r.title),a=r.title||i(o==null?void 0:o.textContent),C=r.author||A(e,o),g=E(e,"ISBN/UID"),H=(x=(w=g==null?void 0:g.match(/[0-9Xx-]{10,17}/))==null?void 0:w[0])==null?void 0:x.replace(/-/g,"");return!a||!C?null:{title:a,author:C,isbn:H,storygraphUrl:t}}const L=':host{display:block;margin:.7rem 0 .95rem;max-width:36rem;font-family:inherit;font-size:.9rem;line-height:1.45;color:inherit;color-scheme:inherit}.panel{display:grid;gap:.7rem;padding:.7rem .85rem;border:1px solid color-mix(in srgb,currentColor 20%,transparent);border-radius:6px;background:color-mix(in srgb,currentColor 5%,transparent)}.status{display:flex;align-items:flex-start;gap:.55rem}.pip{flex:0 0 auto;width:.5rem;height:.5rem;margin-top:.4rem;border-radius:999px;background:color-mix(in srgb,currentColor 45%,transparent)}.copy{display:grid;gap:.15rem;min-width:0}.title{margin:0;font-size:.95rem;font-weight:650;letter-spacing:.01em}.detail{margin:0;font-size:.8rem;opacity:.72}.actions{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem .75rem}.check{-webkit-appearance:none;-moz-appearance:none;appearance:none;margin:0;font:inherit;font-size:.8rem;font-weight:600;line-height:1.2;padding:.42rem .8rem;border-radius:4px;border:1px solid color-mix(in srgb,currentColor 38%,transparent);background:color-mix(in srgb,currentColor 7%,transparent);color:inherit;cursor:pointer}.check:hover:not(:disabled){background:color-mix(in srgb,currentColor 13%,transparent)}.check:active:not(:disabled){transform:translateY(1px)}.check:disabled{opacity:.55;cursor:progress}.check:focus-visible,.amazon:focus-visible{outline:2px solid color-mix(in srgb,currentColor 75%,transparent);outline-offset:2px}.amazon{font:inherit;font-size:.8rem;font-weight:600;color:inherit;text-decoration:underline;text-underline-offset:.16em}.amazon:hover{opacity:.78}:host([data-tone="available"]) .pip{background:#3d9a78}:host([data-tone="checking"]) .pip{background:#2ea8a0}:host([data-tone="uncertain"]) .pip,:host([data-tone="timeout"]) .pip{background:#c4923a}:host([data-tone="error"]) .pip,:host([data-tone="empty"]) .pip{background:#c46b6b}:host([data-tone="absent"]) .pip{background:color-mix(in srgb,currentColor 40%,transparent)}@media(prefers-reduced-motion:reduce){.check:active:not(:disabled){transform:none}}';function U(e){switch(e){case"AVAILABLE":return{title:"Available on Kindle Unlimited"};case"NOT_DETECTED":return{title:"Kindle Unlimited was not detected",detail:"The matching Amazon page did not show Unlimited."};case"UNCERTAIN":return{title:"Possible match",detail:"Confirm the listing on Amazon before you rely on this."};case"NO_MATCH":return{title:"No matching Kindle edition found",detail:"Amazon search did not return a close enough result."};case"TIMED_OUT":return{title:"Amazon check timed out",detail:"Try again, or open the Amazon page yourself."};default:return{title:"Checking Kindle Unlimited"}}}function v(e){switch(e){case"AVAILABLE":return"available";case"NOT_DETECTED":return"absent";case"UNCERTAIN":return"uncertain";case"NO_MATCH":return"empty";case"TIMED_OUT":return"timeout";default:return"checking"}}function I(e){if(!e)return{tone:"idle",title:"Kindle Unlimited not checked",detail:"See if this book is included with Unlimited.",checkLabel:"Check Kindle Unlimited",checkDisabled:!1};const t=U(e.status);return{tone:v(e.status),title:t.title,detail:t.detail,amazonUrl:e.amazonUrl,checkLabel:e.status==="CHECKING"?"Checking":"Check again",checkDisabled:e.status==="CHECKING"}}function s(e,t,n){var o;const r=e.shadowRoot??e.attachShadow({mode:"open"});e.dataset.tone=t.tone,r.innerHTML=`
+    <style>${L}</style>
+    <div class="panel">
+      <div class="status">
+        <span class="pip" aria-hidden="true"></span>
+        <div class="copy">
+          <p class="title" role="status">${l(t.title)}</p>
+          ${t.detail?`<p class="detail">${l(t.detail)}</p>`:""}
+        </div>
+      </div>
+      <div class="actions">
+        <button class="check" type="button"${t.checkDisabled?" disabled":""}>${l(t.checkLabel)}</button>
+        ${t.amazonUrl?`<a class="amazon" href="${D(t.amazonUrl)}" target="_blank" rel="noopener noreferrer">View on Amazon</a>`:""}
+      </div>
+    </div>
+  `,(o=r.querySelector("button"))==null||o.addEventListener("click",n)}function l(e){return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}function D(e){return l(e).replace(/'/g,"&#39;")}const d="sg-ku-checker-root";let u,c,m;function K(e){return(e==null?void 0:e.replace(/\s+/g," ").trim())??""}function S(e){const t=document.getElementById(d);if(t instanceof HTMLElement&&t.isConnected)return t;const n=b(document,e);if(!n)return null;const r=document.createElement("div");return r.id=d,n.insertAdjacentElement("afterend",r),r}function h(e){const t=k();if(!t)return;const n=S(t.title);n&&s(n,I(e),()=>{p(t,n)})}async function p(e,t){s(t,{tone:"checking",title:"Checking Kindle Unlimited",detail:"Looking up the matching Kindle edition on Amazon.",checkLabel:"Checking",checkDisabled:!0},()=>{});const n={type:"CHECK_BOOK",payload:e},r=await chrome.runtime.sendMessage(n).catch(()=>null);if(!(r!=null&&r.ok)||!r.checkId){s(t,{tone:"error",title:"Unable to start check",detail:"The extension could not reach Amazon. Try again.",checkLabel:"Check Kindle Unlimited",checkDisabled:!1},()=>{p(e,t)});return}c=r.checkId,N(c),window.clearTimeout(u),u=window.setTimeout(()=>{c===r.checkId&&s(t,{tone:"timeout",title:"Amazon has not responded",detail:"Try again in a moment.",checkLabel:"Check again",checkDisabled:!1},()=>{p(e,t)})},5e4)}function $(e,t){const n=r=>K(r).toLowerCase();return n(e.title)===n(t.title)&&n(e.author)===n(t.author)}function f(e){const t=k();!t||!$(t,e.book)||(window.clearTimeout(u),window.clearTimeout(m),c=void 0,h(e))}function N(e){window.clearTimeout(m);const t=Date.now(),n=async()=>{if(c!==e)return;const r=await chrome.runtime.sendMessage({type:"GET_CHECK_RESULT",checkId:e}).catch(()=>null);if(r!=null&&r.result){f(r.result);return}Date.now()-t<5e4&&(m=window.setTimeout(n,1e3))};n()}chrome.runtime.onMessage.addListener(e=>{e.type==="KU_RESULT"&&(c&&e.checkId!==c||f(e.payload))}),chrome.storage.onChanged.addListener((e,t)=>{if(t!=="local"||!c)return;const n=e[`delivery:v6:${c}`];n!=null&&n.newValue&&f(n.newValue)});let y;new MutationObserver(()=>{window.clearTimeout(y),y=window.setTimeout(()=>{document.getElementById(d)||h()},300)}).observe(document.documentElement,{childList:!0,subtree:!0}),h()})();

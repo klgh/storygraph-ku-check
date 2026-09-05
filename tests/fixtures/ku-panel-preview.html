@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>KU panel preview</title>
+  <style>
+    body { margin: 0; font-family: "Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+    .page { padding: 2rem; max-width: 40rem; }
+    .dark { background: #2a2a2a; color: #f3f3f3; }
+    .light { background: #f7f4ef; color: #2b2b2b; }
+    h1 { margin: 0 0 0.2rem; font-size: 2rem; }
+    .author { margin: 0.85rem 0 0; opacity: 0.85; }
+    .meta { margin: 0.35rem 0 0; font-size: 0.9rem; opacity: 0.7; }
+  </style>
+</head>
+<body>
+  <section class="page dark">
+    <h1>Dolly All the Time</h1>
+    <div id="dark-idle"></div>
+    <div id="dark-timeout"></div>
+    <div id="dark-available"></div>
+    <p class="author">Annabel Monaghan</p>
+    <p class="meta">387 pages · paperback · first pub 2026</p>
+  </section>
+  <section class="page light">
+    <h1>Dolly All the Time</h1>
+    <div id="light-idle"></div>
+    <div id="light-timeout"></div>
+    <p class="author">Annabel Monaghan</p>
+  </section>
+  <script type="module">
+    import { paintKuPanel, viewForResult } from "../../src/content/storygraph-panel.ts";
+
+    const book = {
+      title: "Dolly All the Time",
+      author: "Annabel Monaghan",
+      storygraphUrl: "https://app.thestorygraph.com/books/dolly"
+    };
+
+    paintKuPanel(document.getElementById("dark-idle"), viewForResult(), () => {});
+    paintKuPanel(document.getElementById("dark-timeout"), viewForResult({
+      book,
+      status: "TIMED_OUT",
+      amazonUrl: "https://www.amazon.com/dp/example",
+      evidence: [],
+      checkedAt: Date.now()
+    }), () => {});
+    paintKuPanel(document.getElementById("dark-available"), viewForResult({
+      book,
+      status: "AVAILABLE",
+      amazonUrl: "https://www.amazon.com/dp/example",
+      evidence: ["Included with Kindle Unlimited"],
+      checkedAt: Date.now()
+    }), () => {});
+    paintKuPanel(document.getElementById("light-idle"), viewForResult(), () => {});
+    paintKuPanel(document.getElementById("light-timeout"), viewForResult({
+      book,
+      status: "TIMED_OUT",
+      amazonUrl: "https://www.amazon.com/dp/example",
+      evidence: [],
+      checkedAt: Date.now()
+    }), () => {});
+  </script>
+</body>
+</html>

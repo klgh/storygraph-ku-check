@@ -1,5 +1,6 @@
 import type { BookIdentity, KuCheckResult } from "../domain/book";
 import { extractStoryGraphBook, findBookHeading } from "../domain/storygraph-extract";
+import { paintKuPanel, viewForResult } from "./storygraph-panel";
 import type { ExtensionMessage } from "../shared/messages";
 
 export { extractStoryGraphBook };
@@ -13,76 +14,71 @@ function clean(value: string | null | undefined): string {
   return value?.replace(/\s+/g, " ").trim() ?? "";
 }
 
+function ensureHost(bookTitle: string): HTMLElement | null {
+  const existing = document.getElementById(ROOT_ID);
+  if (existing instanceof HTMLElement && existing.isConnected) return existing;
+
+  const heading = findBookHeading(document, bookTitle);
+  if (!heading) return null;
+
+  const host = document.createElement("div");
+  host.id = ROOT_ID;
+  heading.insertAdjacentElement("afterend", host);
+  return host;
+}
+
 function render(result?: KuCheckResult): void {
   const book = extractStoryGraphBook();
   if (!book) return;
 
-  document.getElementById(ROOT_ID)?.remove();
+  const host = ensureHost(book.title);
+  if (!host) return;
 
-  const root = document.createElement("section");
-  root.id = ROOT_ID;
-  root.style.cssText = [
-    "margin: 12px 0",
-    "padding: 12px",
-    "border: 1px solid currentColor",
-    "border-radius: 8px",
-    "display: flex",
-    "gap: 10px",
-    "align-items: center",
-    "flex-wrap: wrap"
-  ].join(";");
-
-  const status = document.createElement("span");
-  status.textContent = result ? statusLabel(result) : "Kindle Unlimited status not checked";
-  root.append(status);
-
-  if (result?.amazonUrl) {
-    const link = document.createElement("a");
-    link.href = result.amazonUrl;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.textContent = "View on Amazon";
-    root.append(link);
-  }
-
-  const button = document.createElement("button");
-  button.type = "button";
-  button.textContent = "Check Kindle Unlimited";
-  button.addEventListener("click", async () => {
-    button.disabled = true;
-    status.textContent = "Checking Kindle Unlimited…";
-    const message: ExtensionMessage = { type: "CHECK_BOOK", payload: book };
-    const response = await chrome.runtime.sendMessage(message).catch(() => null);
-    if (!response?.ok || !response.checkId) {
-      button.disabled = false;
-      status.textContent = "Unable to start check";
-      return;
-    }
-
-    activeCheckId = response.checkId as string;
-    startResultPolling(activeCheckId);
-
-    window.clearTimeout(localCheckTimer);
-    localCheckTimer = window.setTimeout(() => {
-      button.disabled = false;
-      status.textContent = "Amazon has not responded — try again";
-    }, 50_000);
+  paintKuPanel(host, viewForResult(result), () => {
+    void startCheck(book, host);
   });
-  root.append(button);
-
-  const heading = findBookHeading(document, book.title);
-  heading?.insertAdjacentElement("afterend", root);
 }
 
-function statusLabel(result: KuCheckResult): string {
-  switch (result.status) {
-    case "AVAILABLE": return "Available on Kindle Unlimited";
-    case "NOT_DETECTED": return "Kindle Unlimited was not detected";
-    case "UNCERTAIN": return "Possible match; verify on Amazon";
-    case "NO_MATCH": return "No matching Kindle result found";
-    case "TIMED_OUT": return "Amazon check timed out — try again";
-    default: return "Checking Kindle Unlimited…";
+async function startCheck(book: BookIdentity, host: HTMLElement): Promise<void> {
+  paintKuPanel(host, {
+    tone: "checking",
+    title: "Checking Kindle Unlimited",
+    detail: "Looking up the matching Kindle edition on Amazon.",
+    checkLabel: "Checking",
+    checkDisabled: true
+  }, () => undefined);
+
+  const message: ExtensionMessage = { type: "CHECK_BOOK", payload: book };
+  const response = await chrome.runtime.sendMessage(message).catch(() => null);
+  if (!response?.ok || !response.checkId) {
+    paintKuPanel(host, {
+      tone: "error",
+      title: "Unable to start check",
+      detail: "The extension could not reach Amazon. Try again.",
+      checkLabel: "Check Kindle Unlimited",
+      checkDisabled: false
+    }, () => {
+      void startCheck(book, host);
+    });
+    return;
   }
+
+  activeCheckId = response.checkId as string;
+  startResultPolling(activeCheckId);
+
+  window.clearTimeout(localCheckTimer);
+  localCheckTimer = window.setTimeout(() => {
+    if (activeCheckId !== response.checkId) return;
+    paintKuPanel(host, {
+      tone: "timeout",
+      title: "Amazon has not responded",
+      detail: "Try again in a moment.",
+      checkLabel: "Check again",
+      checkDisabled: false
+    }, () => {
+      void startCheck(book, host);
+    });
+  }, 50_000);
 }
 
 function sameBook(a: BookIdentity, b: BookIdentity): boolean {
