@@ -160,11 +160,23 @@ async function initializeAmazonCheck(): Promise<void> {
     }
   }
 
-  // Amazon can strip custom query parameters during redirects. Recover the
-  // active check by using this Amazon tab's ID in the service worker.
+  // Amazon often strips custom query params on redirect. The service worker
+  // registers this tab id in session storage before navigation, so recover here.
   const response = await chrome.runtime.sendMessage({ type: "GET_AMAZON_CHECK" } satisfies ExtensionMessage).catch(() => null);
   if (response?.ok && response.book && response.checkId) {
     waitForPage(response.book as BookIdentity, response.checkId as string);
+    return;
+  }
+
+  // Only keep retrying when a check id was present but the book payload failed.
+  if (!queryCheckId) return;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await new Promise((resolve) => window.setTimeout(resolve, 150));
+    const retry = await chrome.runtime.sendMessage({ type: "GET_AMAZON_CHECK" } satisfies ExtensionMessage).catch(() => null);
+    if (retry?.ok && retry.book && retry.checkId) {
+      waitForPage(retry.book as BookIdentity, retry.checkId as string);
+      return;
+    }
   }
 }
 

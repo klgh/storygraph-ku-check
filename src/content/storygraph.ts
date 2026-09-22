@@ -2,6 +2,7 @@ import type { BookIdentity, KuCheckResult } from "../domain/book";
 import { extractStoryGraphBook, findBookHeading } from "../domain/storygraph-extract";
 import { paintKuPanel, viewForResult } from "./storygraph-panel";
 import type { ExtensionMessage } from "../shared/messages";
+import { getCachedResult } from "../storage/cache";
 
 export { extractStoryGraphBook };
 
@@ -39,7 +40,21 @@ function render(result?: KuCheckResult): void {
   });
 }
 
-async function startCheck(book: BookIdentity, host: HTMLElement): Promise<void> {
+function paintTimeout(book: BookIdentity): void {
+  const host = ensureHost(book.title);
+  if (!host) return;
+  paintKuPanel(host, {
+    tone: "timeout",
+    title: "Amazon has not responded",
+    detail: "Try again in a moment.",
+    checkLabel: "Check again",
+    checkDisabled: false
+  }, () => {
+    void startCheck(book, host);
+  });
+}
+
+function paintChecking(host: HTMLElement): void {
   paintKuPanel(host, {
     tone: "checking",
     title: "Checking Kindle Unlimited",
@@ -47,6 +62,10 @@ async function startCheck(book: BookIdentity, host: HTMLElement): Promise<void> 
     checkLabel: "Checking",
     checkDisabled: true
   }, () => undefined);
+}
+
+async function startCheck(book: BookIdentity, host: HTMLElement): Promise<void> {
+  paintChecking(host);
 
   const message: ExtensionMessage = { type: "CHECK_BOOK", payload: book };
   const response = await chrome.runtime.sendMessage(message).catch(() => null);
@@ -64,20 +83,12 @@ async function startCheck(book: BookIdentity, host: HTMLElement): Promise<void> 
   }
 
   activeCheckId = response.checkId as string;
-  startResultPolling(activeCheckId);
+  startResultPolling(activeCheckId, book);
 
   window.clearTimeout(localCheckTimer);
   localCheckTimer = window.setTimeout(() => {
     if (activeCheckId !== response.checkId) return;
-    paintKuPanel(host, {
-      tone: "timeout",
-      title: "Amazon has not responded",
-      detail: "Try again in a moment.",
-      checkLabel: "Check again",
-      checkDisabled: false
-    }, () => {
-      void startCheck(book, host);
-    });
+    paintTimeout(book);
   }, 50_000);
 }
 
@@ -86,32 +97,44 @@ function sameBook(a: BookIdentity, b: BookIdentity): boolean {
   return normalize(a.title) === normalize(b.title) && normalize(a.author) === normalize(b.author);
 }
 
-function applyResult(result: KuCheckResult): void {
+function applyResult(result: KuCheckResult): boolean {
   const currentBook = extractStoryGraphBook();
-  if (!currentBook || !sameBook(currentBook, result.book)) return;
+  // Prefer the live page identity when present; fall back to the result's book
+  // so a transient DOM parse miss does not drop a completed check.
+  if (currentBook && !sameBook(currentBook, result.book)) return false;
+
   window.clearTimeout(localCheckTimer);
   window.clearTimeout(resultPollTimer);
   activeCheckId = undefined;
   render(result);
+  return true;
 }
 
-function startResultPolling(checkId: string): void {
+function startResultPolling(checkId: string, book: BookIdentity): void {
   window.clearTimeout(resultPollTimer);
   const startedAt = Date.now();
 
   const poll = async () => {
     if (activeCheckId !== checkId) return;
     const response = await chrome.runtime.sendMessage({ type: "GET_CHECK_RESULT", checkId } satisfies ExtensionMessage).catch(() => null);
-    if (response?.result) {
-      applyResult(response.result as KuCheckResult);
-      return;
-    }
+    if (response?.result && applyResult(response.result as KuCheckResult)) return;
     if (Date.now() - startedAt < 50_000) {
       resultPollTimer = window.setTimeout(poll, 1000);
+      return;
     }
+    if (activeCheckId === checkId) paintTimeout(book);
   };
 
   void poll();
+}
+
+function pollActiveCheck(): void {
+  if (!activeCheckId) return;
+  const checkId = activeCheckId;
+  void (async () => {
+    const response = await chrome.runtime.sendMessage({ type: "GET_CHECK_RESULT", checkId } satisfies ExtensionMessage).catch(() => null);
+    if (response?.result) applyResult(response.result as KuCheckResult);
+  })();
 }
 
 chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
@@ -126,15 +149,38 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   if (change?.newValue) applyResult(change.newValue as KuCheckResult);
 });
 
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") pollActiveCheck();
+});
+
+async function hydrate(): Promise<void> {
+  const book = extractStoryGraphBook();
+  if (!book) {
+    render();
+    return;
+  }
+
+  const cached = await getCachedResult(book).catch(() => null);
+  render(cached ?? undefined);
+}
+
 let previousUrl = location.href;
 let renderTimer: number | undefined;
 const observer = new MutationObserver(() => {
   if (previousUrl !== location.href) previousUrl = location.href;
   window.clearTimeout(renderTimer);
   renderTimer = window.setTimeout(() => {
-    if (!document.getElementById(ROOT_ID)) render();
+    if (document.getElementById(ROOT_ID)) return;
+    if (activeCheckId) {
+      const book = extractStoryGraphBook();
+      if (!book) return;
+      const host = ensureHost(book.title);
+      if (host) paintChecking(host);
+      return;
+    }
+    void hydrate();
   }, 300);
 });
 observer.observe(document.documentElement, { childList: true, subtree: true });
 
-render();
+void hydrate();

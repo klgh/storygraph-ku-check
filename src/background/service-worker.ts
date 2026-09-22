@@ -72,15 +72,18 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
 
       const checkId = crypto.randomUUID();
       const pending: PendingCheck = { sourceTabId: sender.tab.id, book: message.payload, createdAt: Date.now() };
-      await chrome.storage.session.set({ [pendingKey(checkId)]: pending });
-      const amazonTab = await chrome.tabs.create({ url: buildAmazonSearchUrl(message.payload, checkId), active: true });
-      if (amazonTab.id != null) {
-        pending.amazonTabId = amazonTab.id;
-        await chrome.storage.session.set({
-          [pendingKey(checkId)]: pending,
-          [amazonTabKey(amazonTab.id)]: checkId
-        });
-      }
+
+      // Register the Amazon tab id in session storage before navigation so the
+      // content script can recover the check if Amazon strips custom query params.
+      const amazonTab = await chrome.tabs.create({ url: "about:blank", active: false });
+      if (amazonTab.id == null) throw new Error("Amazon tab was not created");
+
+      pending.amazonTabId = amazonTab.id;
+      await chrome.storage.session.set({
+        [pendingKey(checkId)]: pending,
+        [amazonTabKey(amazonTab.id)]: checkId
+      });
+      await chrome.tabs.update(amazonTab.id, { url: buildAmazonSearchUrl(message.payload, checkId) });
       await chrome.alarms.create(alarmName(checkId), { delayInMinutes: 0.75 });
       sendResponse({ ok: true, cached: false, checkId });
     })().catch((error: unknown) => {
@@ -117,6 +120,11 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
       await chrome.alarms.clear(alarmName(message.checkId));
       await chrome.storage.session.remove([key, ...(pending.amazonTabId ? [amazonTabKey(pending.amazonTabId)] : [])]);
       sendResponse({ ok: true });
+      // Close after acknowledging the Amazon content script so its sendMessage
+      // reply is not canceled by destroying the tab mid-flight.
+      if (pending.amazonTabId != null) {
+        await chrome.tabs.remove(pending.amazonTabId).catch(() => undefined);
+      }
     })().catch((error: unknown) => {
       console.error("Failed to deliver KU result", error);
       sendResponse({ ok: false });
