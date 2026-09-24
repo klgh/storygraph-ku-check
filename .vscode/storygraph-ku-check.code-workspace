@@ -18,5 +18,12 @@
 			}
 		],
 		"json.validate.enable": true,
+		"js/ts.tsdk.path": "node_modules/typescript/lib",
+		"js/ts.suggest.paths": true,
+		"js/ts.tsserver.checkNpmIsInstalled": true,
+		"js/ts.tsserver.experimental.useBundledNode": true,
+		"js/ts.tsserver.node.path": "/Users/206681346@bwt3.com/.nvm/versions/node/v24.18.0/bin/node",
+		"npm.packageManager": "npm",
+		"npm.fetchOnlinePackageInfo": true,
 	}
 }
