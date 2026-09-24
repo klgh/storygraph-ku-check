@@ -1,8 +1,8 @@
 {
-  "manifest_version": 3,
   "name": "StoryGraph Kindle Unlimited Checker",
-  "version": "0.8.0",
   "description": "Checks whether a StoryGraph book appears to be available through Kindle Unlimited.",
+  "version": "1.0.0",
+  "manifest_version": 3,
   "permissions": [
     "storage",
     "alarms"
