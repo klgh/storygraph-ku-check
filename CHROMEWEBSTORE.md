@@ -42,7 +42,7 @@ PERMISSIONS
 SUPPORT
 Questions or problems: https://github.com/klgh/storygraph-ku-check/issues
 
-Version 1.0.0 — First store release. Returning to a book within 24 hours shows the last result. Check again looks the book up on Amazon again.
+Version 0.0.0.1 — Initial release. Returning to a book within 24 hours shows the last result. Check again looks the book up on Amazon again.
 
 **Category** [REQUIRED]
 Shopping
@@ -192,9 +192,7 @@ https://github.com/klgh/storygraph-ku-check
 
 | Version | Date | Changes | Status |
 | --------- | ------ | --------- | -------- |
-| 1.0.0 | 2026-09-24 | First version prepared for the Chrome Web Store. Returning to a book within 24 hours shows the last result. Check again always looks the book up on Amazon again, in a background tab that closes when the check finishes. | Draft |
-| 0.8.2 | 2026-09-24 | Added a timeout so a check does not stay on “Checking” if Amazon does not respond. | Draft |
-| 0.8.0 | 2026-09-04 | After a strong Amazon search match, the product page is treated as the matched book and reported as available on Kindle Unlimited or not detected. | Draft |
+| 0.0.0.1 | 2026-09-24 | Initial release. Returning to a book within 24 hours shows the last result. Check again always looks the book up on Amazon again, in a background tab that closes when the check finishes. | Draft |
 
 ## Review Notes
 

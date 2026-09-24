@@ -4,17 +4,17 @@ Chrome extension that checks whether a StoryGraph book is included with Kindle U
 
 ## Features
 
-## Installation
+- Checks whether a StoryGraph book is included with Kindle Unlimited
+- Displays the result of the check
 
-1. Clone the repository
-2. Run `npm install`
-3. Run `npm run build`
-4. Load the `dist` directory as an unpacked Chrome extension.
+## Running this extension
 
-## Usage
+1. Clone this repository.
+2. Load this directory in Chrome as an [unpacked extension](https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/#load-unpacked).
+3. Pin the extension to the browser's taskbar.
+4. Click on the extension's action button to check a book.
 
-1. Open the StoryGraph book page
-2. The extension will check if the book is included with Kindle Unlimited
+<!-- TODO: add how to install the extension from the Chrome Web Store -->
 
 ## Contributing
 
