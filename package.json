@@ -19,6 +19,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "node scripts/build.mjs --watch",
+    "format": "prettier --write .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

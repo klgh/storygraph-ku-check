@@ -1,4 +1,4 @@
-import { copyFile, rm } from 'node:fs/promises';
+import { copyFile, mkdir, rm } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'vite';
@@ -6,6 +6,7 @@ import { build } from 'vite';
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const watch = process.argv.includes('--watch');
 const manifest = resolve(project, 'manifest.json');
+const iconFiles = ['icon16.png', 'icon32.png', 'icon48.png', 'icon128.png'];
 
 function copyManifestPlugin() {
   return {
@@ -14,7 +15,11 @@ function copyManifestPlugin() {
       this.addWatchFile(manifest);
     },
     async writeBundle() {
-      await copyFile(manifest, resolve(project, 'dist', 'manifest.json'));
+      const dist = resolve(project, 'dist');
+      const assetsDir = resolve(dist, 'assets');
+      await copyFile(manifest, resolve(dist, 'manifest.json'));
+      await mkdir(assetsDir, { recursive: true });
+      await Promise.all(iconFiles.map((name) => copyFile(resolve(project, 'assets', name), resolve(assetsDir, name))));
     },
   };
 }

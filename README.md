@@ -1,3 +1,5 @@
+![StoryGraph Kindle Unlimited Checker icon](assets/icon128.png)
+
 # StoryGraph Kindle Unlimited Checker
 
 Chrome extension that checks whether a StoryGraph book is included with Kindle Unlimited.
