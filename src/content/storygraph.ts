@@ -1,18 +1,16 @@
-import type { BookIdentity, KuCheckResult } from "../domain/book";
-import { extractStoryGraphBook, findBookHeading } from "../domain/storygraph-extract";
-import { paintKuPanel, viewForResult } from "./storygraph-panel";
-import type { ExtensionMessage } from "../shared/messages";
-import { getCachedResult } from "../storage/cache";
+import type { BookIdentity, KuCheckResult } from '../domain/book';
+import { extractStoryGraphBook, findBookHeading } from '../domain/storygraph-extract';
+import { paintKuPanel, viewForResult } from './storygraph-panel';
+import type { ExtensionMessage } from '../shared/messages';
+import { getCachedResult } from '../storage/cache';
 
-export { extractStoryGraphBook };
-
-const ROOT_ID = "sg-ku-checker-root";
+const ROOT_ID = 'sg-ku-checker-root';
 let localCheckTimer: number | undefined;
 let activeCheckId: string | undefined;
 let resultPollTimer: number | undefined;
 
 function clean(value: string | null | undefined): string {
-  return value?.replace(/\s+/g, " ").trim() ?? "";
+  return value?.replace(/\s+/g, ' ').trim() ?? '';
 }
 
 function ensureHost(bookTitle: string): HTMLElement | null {
@@ -22,9 +20,9 @@ function ensureHost(bookTitle: string): HTMLElement | null {
   const heading = findBookHeading(document, bookTitle);
   if (!heading) return null;
 
-  const host = document.createElement("div");
+  const host = document.createElement('div');
   host.id = ROOT_ID;
-  heading.insertAdjacentElement("afterend", host);
+  heading.insertAdjacentElement('afterend', host);
   return host;
 }
 
@@ -43,42 +41,54 @@ function render(result?: KuCheckResult): void {
 function paintTimeout(book: BookIdentity): void {
   const host = ensureHost(book.title);
   if (!host) return;
-  paintKuPanel(host, {
-    tone: "timeout",
-    title: "Amazon has not responded",
-    detail: "Try again in a moment.",
-    checkLabel: "Check again",
-    checkDisabled: false
-  }, () => {
-    void startCheck(book, host);
-  });
+  paintKuPanel(
+    host,
+    {
+      tone: 'timeout',
+      title: 'Amazon has not responded',
+      detail: 'Try again in a moment.',
+      checkLabel: 'Check again',
+      checkDisabled: false,
+    },
+    () => {
+      void startCheck(book, host);
+    }
+  );
 }
 
 function paintChecking(host: HTMLElement): void {
-  paintKuPanel(host, {
-    tone: "checking",
-    title: "Checking Kindle Unlimited",
-    detail: "Looking up the matching Kindle edition on Amazon.",
-    checkLabel: "Checking",
-    checkDisabled: true
-  }, () => undefined);
+  paintKuPanel(
+    host,
+    {
+      tone: 'checking',
+      title: 'Checking Kindle Unlimited',
+      detail: 'Looking up the matching Kindle edition on Amazon.',
+      checkLabel: 'Checking',
+      checkDisabled: true,
+    },
+    () => undefined
+  );
 }
 
 async function startCheck(book: BookIdentity, host: HTMLElement): Promise<void> {
   paintChecking(host);
 
-  const message: ExtensionMessage = { type: "CHECK_BOOK", payload: book, force: true };
+  const message: ExtensionMessage = { type: 'CHECK_BOOK', payload: book, force: true };
   const response = await chrome.runtime.sendMessage(message).catch(() => null);
   if (!response?.ok || !response.checkId) {
-    paintKuPanel(host, {
-      tone: "error",
-      title: "Unable to start check",
-      detail: "The extension could not reach Amazon. Try again.",
-      checkLabel: "Check Kindle Unlimited",
-      checkDisabled: false
-    }, () => {
-      void startCheck(book, host);
-    });
+    paintKuPanel(
+      host,
+      {
+        tone: 'error',
+        title: 'Unable to start check',
+        detail: 'The extension could not reach Amazon. Try again.',
+        checkLabel: 'Check Kindle Unlimited',
+        checkDisabled: false,
+      },
+      () => {
+        void startCheck(book, host);
+      }
+    );
     return;
   }
 
@@ -116,7 +126,9 @@ function startResultPolling(checkId: string, book: BookIdentity): void {
 
   const poll = async () => {
     if (activeCheckId !== checkId) return;
-    const response = await chrome.runtime.sendMessage({ type: "GET_CHECK_RESULT", checkId } satisfies ExtensionMessage).catch(() => null);
+    const response = await chrome.runtime
+      .sendMessage({ type: 'GET_CHECK_RESULT', checkId } satisfies ExtensionMessage)
+      .catch(() => null);
     if (response?.result && applyResult(response.result as KuCheckResult)) return;
     if (Date.now() - startedAt < 50_000) {
       resultPollTimer = window.setTimeout(poll, 1000);
@@ -132,25 +144,27 @@ function pollActiveCheck(): void {
   if (!activeCheckId) return;
   const checkId = activeCheckId;
   void (async () => {
-    const response = await chrome.runtime.sendMessage({ type: "GET_CHECK_RESULT", checkId } satisfies ExtensionMessage).catch(() => null);
+    const response = await chrome.runtime
+      .sendMessage({ type: 'GET_CHECK_RESULT', checkId } satisfies ExtensionMessage)
+      .catch(() => null);
     if (response?.result) applyResult(response.result as KuCheckResult);
   })();
 }
 
 chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
-  if (message.type !== "KU_RESULT") return;
+  if (message.type !== 'KU_RESULT') return;
   if (activeCheckId && message.checkId !== activeCheckId) return;
   applyResult(message.payload);
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName !== "local" || !activeCheckId) return;
+  if (areaName !== 'local' || !activeCheckId) return;
   const change = changes[`delivery:v6:${activeCheckId}`];
   if (change?.newValue) applyResult(change.newValue as KuCheckResult);
 });
 
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") pollActiveCheck();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') pollActiveCheck();
 });
 
 async function hydrate(): Promise<void> {

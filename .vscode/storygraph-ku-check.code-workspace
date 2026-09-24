@@ -1,11 +1,37 @@
 {
-	"folders": [
-		{
-			"path": ".."
-		}
-	],
-	"settings": {
-		"workbench.colorTheme": "Anorak: Slate Orchard Light",
-		"editor.fontFamily": "Kode Mono",
-	}
+  "folders": [
+    {
+      "path": "..",
+    },
+  ],
+  "settings": {
+    "workbench.colorTheme": "Anorak: Slate Orchard Light",
+    "editor.fontFamily": "Kode Mono",
+    "json.format.enable": true,
+    "json.schemaDownload.enable": true,
+    "json.schemas": [
+      {
+        "fileMatch": [
+          "manifest.json"
+        ],
+        "url": "https://json.schemastore.org/chrome-manifest",
+      },
+    ],
+    "json.validate.enable": true,
+    "js/ts.suggest.paths": true,
+    "js/ts.tsserver.node.path": "/Users/206681346@bwt3.com/.nvm/versions/node/v24.18.0/bin/node",
+    "npm.packageManager": "npm",
+    "npm.fetchOnlinePackageInfo": true,
+    "cSpell.words": [
+      "CHROMEWEBSTORE",
+      "storygraph"
+    ],
+    "yaml.format.enable": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "prettier.configPath": ".prettierrc",
+    "prettier.requireConfig": true,
+    "prettier.useEditorConfig": true,
+    "prettier.ignorePath": ".prettierignore",
+  },
 }

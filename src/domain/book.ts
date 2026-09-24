@@ -5,13 +5,7 @@ export interface BookIdentity {
   storygraphUrl: string;
 }
 
-export type KuStatus =
-  | "AVAILABLE"
-  | "NOT_DETECTED"
-  | "UNCERTAIN"
-  | "NO_MATCH"
-  | "TIMED_OUT"
-  | "CHECKING";
+export type KuStatus = 'AVAILABLE' | 'NOT_DETECTED' | 'UNCERTAIN' | 'NO_MATCH' | 'TIMED_OUT' | 'CHECKING';
 
 export interface KuCheckResult {
   book: BookIdentity;

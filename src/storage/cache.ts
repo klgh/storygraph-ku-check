@@ -1,5 +1,5 @@
-import type { BookIdentity, KuCheckResult } from "../domain/book";
-import { normalizeText } from "../domain/normalize";
+import type { BookIdentity, KuCheckResult } from '../domain/book';
+import { normalizeText } from '../domain/normalize';
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -20,6 +20,6 @@ export async function getCachedResult(book: BookIdentity): Promise<KuCheckResult
 }
 
 export async function setCachedResult(result: KuCheckResult): Promise<void> {
-  if (result.status === "TIMED_OUT") return;
+  if (result.status === 'TIMED_OUT') return;
   await chrome.storage.local.set({ [resultCacheKey(result.book)]: result });
 }

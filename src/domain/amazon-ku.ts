@@ -17,27 +17,27 @@ export const KU_TEXT_PATTERNS: RegExp[] = [
   /unlimited\s+reading/i,
   /\$0\.00\s+to\s+buy\s+after\s+credits/i,
   /\$0\.00\s+(?:to\s+buy\s+)?(?:with|after)\s+kindle\s+unlimited/i,
-  /kindle\s+unlimited/i
+  /kindle\s+unlimited/i,
 ];
 
 /** Offer/buybox regions — keep scoped so related-book promos do not count. */
 export const OFFER_SELECTOR_LIST = [
-  "#buybox",
-  "#desktop_buybox",
-  "#Unified-Buybox-Container",
-  "#Books-Buybox",
-  "#CombinedBuybox",
-  "#combinedBuyBox",
-  "#buyBoxAccordion",
-  "#tmmSwatches",
-  "#formats",
-  "#tmm-grid-swatch-KINDLE",
-  "#mediaTab_content_landing",
-  "#digitalDashHighProminenceBadge",
-  "#kindleUnlimitedBadge",
-  "#Kibbo-KINDLE_UNLIMITED_UPSELL-Desktop",
-  "#kuUpsell_desktop_feature_div",
-  "#kuUpsellAccordionRow_desktop_content",
+  '#buybox',
+  '#desktop_buybox',
+  '#Unified-Buybox-Container',
+  '#Books-Buybox',
+  '#CombinedBuybox',
+  '#combinedBuyBox',
+  '#buyBoxAccordion',
+  '#tmmSwatches',
+  '#formats',
+  '#tmm-grid-swatch-KINDLE',
+  '#mediaTab_content_landing',
+  '#digitalDashHighProminenceBadge',
+  '#kindleUnlimitedBadge',
+  '#Kibbo-KINDLE_UNLIMITED_UPSELL-Desktop',
+  '#kuUpsell_desktop_feature_div',
+  '#kuUpsellAccordionRow_desktop_content',
   "[data-a-expander-name='kindleUnlimited']",
   "[data-csa-c-content-id*='kuUpsell']",
   "[data-csa-c-content-id*='kuUpsellAccordion']",
@@ -45,29 +45,29 @@ export const OFFER_SELECTOR_LIST = [
   "[id*='KINDLE_UNLIMITED']",
   "[id*='kuUpsell']",
   "[class*='kindleUnlimited']",
-  "[class*='ku-promo']"
+  "[class*='ku-promo']",
 ];
 
-export const OFFER_SELECTORS = OFFER_SELECTOR_LIST.join(",");
+export const OFFER_SELECTORS = OFFER_SELECTOR_LIST.join(',');
 
 const KU_STRUCTURAL_SELECTORS = [
-  "#Kibbo-KINDLE_UNLIMITED_UPSELL-Desktop",
-  "#kuUpsell_desktop_feature_div",
-  "#kuUpsellAccordionRow_desktop_content",
-  "#kindleUnlimitedBadge",
-  "[data-a-expander-name='kindleUnlimited']"
-].join(",");
+  '#Kibbo-KINDLE_UNLIMITED_UPSELL-Desktop',
+  '#kuUpsell_desktop_feature_div',
+  '#kuUpsellAccordionRow_desktop_content',
+  '#kindleUnlimitedBadge',
+  "[data-a-expander-name='kindleUnlimited']",
+].join(',');
 
 function isVisiblyRenderable(node: Element): boolean {
   if (!(node instanceof HTMLElement)) return false;
   const style = getComputedStyle(node);
-  return style.display !== "none" && style.visibility !== "hidden";
+  return style.display !== 'none' && style.visibility !== 'hidden';
 }
 
 function visibleText(node: HTMLElement): string {
-  if (!isVisiblyRenderable(node)) return "";
-  const text = node.innerText || node.textContent || "";
-  return text.replace(/\s+/g, " ").trim();
+  if (!isVisiblyRenderable(node)) return '';
+  const text = node.innerText || node.textContent || '';
+  return text.replace(/\s+/g, ' ').trim();
 }
 
 function addPatternEvidence(evidence: Set<string>, text: string): void {
@@ -92,18 +92,20 @@ export function collectKuEvidence(root: ParentNode = document): string[] {
   for (const node of offerRoots(root)) {
     addPatternEvidence(evidence, visibleText(node));
 
-    for (const img of node.querySelectorAll("img")) {
+    for (const img of node.querySelectorAll('img')) {
       if (!isVisiblyRenderable(img)) continue;
-      const alt = img.getAttribute("alt") ?? "";
-      const src = img.getAttribute("src") ?? "";
+      const alt = img.getAttribute('alt') ?? '';
+      const src = img.getAttribute('src') ?? '';
       if (/kindle\s*unlimited/i.test(alt) || /kindleunlimited/i.test(src)) {
-        evidence.add(alt.trim() || "Kindle Unlimited logo");
+        evidence.add(alt.trim() || 'Kindle Unlimited logo');
       }
     }
 
-    for (const icon of node.querySelectorAll<HTMLElement>("[class*='a-icon-kindle-unlimited'], [class*='kindle-unlimited']")) {
+    for (const icon of node.querySelectorAll<HTMLElement>(
+      "[class*='a-icon-kindle-unlimited'], [class*='kindle-unlimited']"
+    )) {
       if (isVisiblyRenderable(icon)) {
-        evidence.add("Kindle Unlimited icon");
+        evidence.add('Kindle Unlimited icon');
         break;
       }
     }
@@ -111,7 +113,7 @@ export function collectKuEvidence(root: ParentNode = document): string[] {
 
   for (const node of root.querySelectorAll<HTMLElement>(KU_STRUCTURAL_SELECTORS)) {
     if (isVisiblyRenderable(node)) {
-      evidence.add("Kindle Unlimited offer widget");
+      evidence.add('Kindle Unlimited offer widget');
       break;
     }
   }
@@ -123,19 +125,19 @@ export function collectKuEvidence(root: ParentNode = document): string[] {
 export function offerAreaReady(root: ParentNode = document): boolean {
   const candidates = root.querySelectorAll<HTMLElement>(
     [
-      "#buybox",
-      "#desktop_buybox",
-      "#Unified-Buybox-Container",
-      "#tmmSwatches",
-      "#formats",
-      "#Kibbo-KINDLE_UNLIMITED_UPSELL-Desktop",
-      "#Kibbo-KINDLE_ALC-Desktop",
-      "#kindleALCAccordionRow_desktop_content"
-    ].join(",")
+      '#buybox',
+      '#desktop_buybox',
+      '#Unified-Buybox-Container',
+      '#tmmSwatches',
+      '#formats',
+      '#Kibbo-KINDLE_UNLIMITED_UPSELL-Desktop',
+      '#Kibbo-KINDLE_ALC-Desktop',
+      '#kindleALCAccordionRow_desktop_content',
+    ].join(',')
   );
 
   return [...candidates].some((node) => {
     if (!isVisiblyRenderable(node)) return false;
-    return Boolean(visibleText(node) || node.querySelector("img, button, a, input"));
+    return Boolean(visibleText(node) || node.querySelector('img, button, a, input'));
   });
 }

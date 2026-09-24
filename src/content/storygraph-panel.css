@@ -106,13 +106,23 @@
   opacity: 0.78;
 }
 
-:host([data-tone="available"]) .pip { background: #3d9a78; }
-:host([data-tone="checking"]) .pip { background: #2ea8a0; }
-:host([data-tone="uncertain"]) .pip,
-:host([data-tone="timeout"]) .pip { background: #c4923a; }
-:host([data-tone="error"]) .pip,
-:host([data-tone="empty"]) .pip { background: #c46b6b; }
-:host([data-tone="absent"]) .pip { background: color-mix(in srgb, currentColor 40%, transparent); }
+:host([data-tone='available']) .pip {
+  background: #3d9a78;
+}
+:host([data-tone='checking']) .pip {
+  background: #2ea8a0;
+}
+:host([data-tone='uncertain']) .pip,
+:host([data-tone='timeout']) .pip {
+  background: #c4923a;
+}
+:host([data-tone='error']) .pip,
+:host([data-tone='empty']) .pip {
+  background: #c46b6b;
+}
+:host([data-tone='absent']) .pip {
+  background: color-mix(in srgb, currentColor 40%, transparent);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .check:active:not(:disabled) {

@@ -1,11 +1,11 @@
-import type { BookIdentity, KuCheckResult } from "../domain/book";
-import type { ExtensionMessage, PendingCheck } from "../shared/messages";
-import { getCachedResult, setCachedResult } from "../storage/cache";
+import type { BookIdentity, KuCheckResult } from '../domain/book';
+import type { ExtensionMessage, PendingCheck } from '../shared/messages';
+import { getCachedResult, setCachedResult } from '../storage/cache';
 
-const PENDING_PREFIX = "pending:v6:";
-const AMAZON_TAB_PREFIX = "amazon-tab:v6:";
-const DELIVERY_PREFIX = "delivery:v6:";
-const ALARM_PREFIX = "sgku-timeout:";
+const PENDING_PREFIX = 'pending:v6:';
+const AMAZON_TAB_PREFIX = 'amazon-tab:v6:';
+const DELIVERY_PREFIX = 'delivery:v6:';
+const ALARM_PREFIX = 'sgku-timeout:';
 
 const pendingKey = (checkId: string) => `${PENDING_PREFIX}${checkId}`;
 const amazonTabKey = (tabId: number) => `${AMAZON_TAB_PREFIX}${tabId}`;
@@ -19,13 +19,15 @@ function buildAmazonSearchUrl(book: BookIdentity, checkId: string): string {
 }
 
 async function deliverResult(checkId: string, pending: PendingCheck, result: KuCheckResult): Promise<void> {
-  if (result.status !== "TIMED_OUT") await setCachedResult(result);
+  if (result.status !== 'TIMED_OUT') await setCachedResult(result);
   await chrome.storage.local.set({ [deliveryKey(checkId)]: result });
-  await chrome.tabs.sendMessage(pending.sourceTabId, {
-    type: "KU_RESULT",
-    payload: result,
-    checkId
-  } satisfies ExtensionMessage).catch(() => undefined);
+  await chrome.tabs
+    .sendMessage(pending.sourceTabId, {
+      type: 'KU_RESULT',
+      payload: result,
+      checkId,
+    } satisfies ExtensionMessage)
+    .catch(() => undefined);
 }
 
 async function findCheckForAmazonTab(tabId: number): Promise<{ checkId: string; pending: PendingCheck } | null> {
@@ -47,20 +49,21 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     if (!pending) return;
     const result: KuCheckResult = {
       book: pending.book,
-      status: "TIMED_OUT",
-      amazonUrl: pending.amazonTabId ? (await chrome.tabs.get(pending.amazonTabId).catch(() => undefined))?.url : undefined,
-      evidence: ["Amazon did not return a result before the extension timeout"],
-      checkedAt: Date.now()
+      status: 'TIMED_OUT',
+      amazonUrl:
+        pending.amazonTabId ? (await chrome.tabs.get(pending.amazonTabId).catch(() => undefined))?.url : undefined,
+      evidence: ['Amazon did not return a result before the extension timeout'],
+      checkedAt: Date.now(),
     };
     await deliverResult(checkId, pending, result);
     await chrome.storage.session.remove([key, ...(pending.amazonTabId ? [amazonTabKey(pending.amazonTabId)] : [])]);
-  })().catch((error: unknown) => console.error("KU timeout handling failed", error));
+  })().catch((error: unknown) => console.error('KU timeout handling failed', error));
 });
 
 chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendResponse) => {
-  if (message.type === "CHECK_BOOK") {
+  if (message.type === 'CHECK_BOOK') {
     void (async () => {
-      if (sender.tab?.id == null) throw new Error("StoryGraph tab was not available");
+      if (sender.tab?.id == null) throw new Error('StoryGraph tab was not available');
       // Explicit Check / Check again always re-queries Amazon. Cache is only for
       // hydrating the panel on page load without opening a tab.
       if (!message.force) {
@@ -68,7 +71,9 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
         if (cached) {
           const checkId = `cached-${crypto.randomUUID()}`;
           await chrome.storage.local.set({ [deliveryKey(checkId)]: cached });
-          await chrome.tabs.sendMessage(sender.tab.id, { type: "KU_RESULT", payload: cached, checkId } satisfies ExtensionMessage).catch(() => undefined);
+          await chrome.tabs
+            .sendMessage(sender.tab.id, { type: 'KU_RESULT', payload: cached, checkId } satisfies ExtensionMessage)
+            .catch(() => undefined);
           sendResponse({ ok: true, cached: true, checkId });
           return;
         }
@@ -79,25 +84,25 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
 
       // Register the Amazon tab id in session storage before navigation so the
       // content script can recover the check if Amazon strips custom query params.
-      const amazonTab = await chrome.tabs.create({ url: "about:blank", active: false });
-      if (amazonTab.id == null) throw new Error("Amazon tab was not created");
+      const amazonTab = await chrome.tabs.create({ url: 'about:blank', active: false });
+      if (amazonTab.id == null) throw new Error('Amazon tab was not created');
 
       pending.amazonTabId = amazonTab.id;
       await chrome.storage.session.set({
         [pendingKey(checkId)]: pending,
-        [amazonTabKey(amazonTab.id)]: checkId
+        [amazonTabKey(amazonTab.id)]: checkId,
       });
       await chrome.tabs.update(amazonTab.id, { url: buildAmazonSearchUrl(message.payload, checkId) });
       await chrome.alarms.create(alarmName(checkId), { delayInMinutes: 0.75 });
       sendResponse({ ok: true, cached: false, checkId });
     })().catch((error: unknown) => {
-      console.error("Failed to start KU check", error);
+      console.error('Failed to start KU check', error);
       sendResponse({ ok: false });
     });
     return true;
   }
 
-  if (message.type === "GET_AMAZON_CHECK") {
+  if (message.type === 'GET_AMAZON_CHECK') {
     void (async () => {
       if (sender.tab?.id == null) return sendResponse({ ok: false });
       const found = await findCheckForAmazonTab(sender.tab.id);
@@ -106,7 +111,7 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
     return true;
   }
 
-  if (message.type === "GET_CHECK_RESULT") {
+  if (message.type === 'GET_CHECK_RESULT') {
     void (async () => {
       const stored = await chrome.storage.local.get(deliveryKey(message.checkId));
       sendResponse({ ok: true, result: stored[deliveryKey(message.checkId)] ?? null });
@@ -114,12 +119,12 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
     return true;
   }
 
-  if (message.type === "AMAZON_RESULT") {
+  if (message.type === 'AMAZON_RESULT') {
     void (async () => {
       const key = pendingKey(message.checkId);
       const stored = await chrome.storage.session.get(key);
       const pending = stored[key] as PendingCheck | undefined;
-      if (!pending) return sendResponse({ ok: false, reason: "unknown-check" });
+      if (!pending) return sendResponse({ ok: false, reason: 'unknown-check' });
       await deliverResult(message.checkId, pending, message.payload);
       await chrome.alarms.clear(alarmName(message.checkId));
       await chrome.storage.session.remove([key, ...(pending.amazonTabId ? [amazonTabKey(pending.amazonTabId)] : [])]);
@@ -130,7 +135,7 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
         await chrome.tabs.remove(pending.amazonTabId).catch(() => undefined);
       }
     })().catch((error: unknown) => {
-      console.error("Failed to deliver KU result", error);
+      console.error('Failed to deliver KU result', error);
       sendResponse({ ok: false });
     });
     return true;
