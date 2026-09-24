@@ -10,7 +10,8 @@ Chrome extension that checks whether a StoryGraph book is included with Kindle U
 ## Running this extension
 
 1. Clone this repository.
-2. Load this directory in Chrome as an [unpacked extension](https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/#load-unpacked).
+2. Load this directory in Chrome as an
+   [unpacked extension](https://developer.chrome.com/docs/extensions/mv3/getstarted/development-basics/#load-unpacked).
 3. Pin the extension to the browser's taskbar.
 4. Click on the extension's action button to check a book.
 

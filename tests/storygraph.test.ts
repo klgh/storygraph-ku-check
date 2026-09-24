@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { extractStoryGraphBook, findBookHeading } from "../src/domain/storygraph-extract";
+import { afterEach, describe, expect, it } from 'vitest';
+import { extractStoryGraphBook, findBookHeading } from '../src/domain/storygraph-extract';
 
-const BOOK_URL = "https://app.thestorygraph.com/books/example-book";
+const BOOK_URL = 'https://app.thestorygraph.com/books/example-book';
 
 function mount(html: string): Document {
   document.documentElement.innerHTML = html;
@@ -9,11 +9,11 @@ function mount(html: string): Document {
 }
 
 afterEach(() => {
-  document.documentElement.innerHTML = "";
+  document.documentElement.innerHTML = '';
 });
 
-describe("extractStoryGraphBook", () => {
-  it("reads title and author from the Open Graph title", () => {
+describe('extractStoryGraphBook', () => {
+  it('reads title and author from the Open Graph title', () => {
     mount(`
       <head>
         <meta property="og:title" content="Piranesi by Susanna Clarke | The StoryGraph">
@@ -25,14 +25,14 @@ describe("extractStoryGraphBook", () => {
     `);
 
     expect(extractStoryGraphBook(document, BOOK_URL)).toEqual({
-      title: "Piranesi",
-      author: "Susanna Clarke",
-      isbn: "9781635577808",
-      storygraphUrl: BOOK_URL
+      title: 'Piranesi',
+      author: 'Susanna Clarke',
+      isbn: '9781635577808',
+      storygraphUrl: BOOK_URL,
     });
   });
 
-  it("falls back to the book heading and nearby author link", () => {
+  it('falls back to the book heading and nearby author link', () => {
     mount(`
       <body>
         <div>
@@ -43,14 +43,14 @@ describe("extractStoryGraphBook", () => {
     `);
 
     expect(extractStoryGraphBook(document, BOOK_URL)).toEqual({
-      title: "The Priory of the Orange Tree",
-      author: "Samantha Shannon",
+      title: 'The Priory of the Orange Tree',
+      author: 'Samantha Shannon',
       isbn: undefined,
-      storygraphUrl: BOOK_URL
+      storygraphUrl: BOOK_URL,
     });
   });
 
-  it("prefers the author next to the heading over another author on the page", () => {
+  it('prefers the author next to the heading over another author on the page', () => {
     mount(`
       <body>
         <a href="/authors/wrong-person">Wrong Person</a>
@@ -61,10 +61,10 @@ describe("extractStoryGraphBook", () => {
       </body>
     `);
 
-    expect(extractStoryGraphBook(document, BOOK_URL)?.author).toBe("Amal El-Mohtar");
+    expect(extractStoryGraphBook(document, BOOK_URL)?.author).toBe('Amal El-Mohtar');
   });
 
-  it("skips section headings when choosing the book title", () => {
+  it('skips section headings when choosing the book title', () => {
     mount(`
       <body>
         <h2>Description</h2>
@@ -76,11 +76,11 @@ describe("extractStoryGraphBook", () => {
     `);
 
     const heading = findBookHeading(document);
-    expect(heading?.textContent?.trim()).toBe("Project Hail Mary");
-    expect(extractStoryGraphBook(document, BOOK_URL)?.title).toBe("Project Hail Mary");
+    expect(heading?.textContent?.trim()).toBe('Project Hail Mary');
+    expect(extractStoryGraphBook(document, BOOK_URL)?.title).toBe('Project Hail Mary');
   });
 
-  it("strips hyphens from an ISBN/UID value", () => {
+  it('strips hyphens from an ISBN/UID value', () => {
     mount(`
       <body>
         <h1>Example Book</h1>
@@ -89,10 +89,10 @@ describe("extractStoryGraphBook", () => {
       </body>
     `);
 
-    expect(extractStoryGraphBook(document, BOOK_URL)?.isbn).toBe("9781234567890");
+    expect(extractStoryGraphBook(document, BOOK_URL)?.isbn).toBe('9781234567890');
   });
 
-  it("returns null when the author cannot be found", () => {
+  it('returns null when the author cannot be found', () => {
     mount(`
       <body>
         <h1>Untitled Notes</h1>
@@ -102,7 +102,7 @@ describe("extractStoryGraphBook", () => {
     expect(extractStoryGraphBook(document, BOOK_URL)).toBeNull();
   });
 
-  it("returns null when the title cannot be found", () => {
+  it('returns null when the title cannot be found', () => {
     mount(`
       <body>
         <a href="/authors/example">Example Author</a>

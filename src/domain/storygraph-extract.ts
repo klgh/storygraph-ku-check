@@ -1,23 +1,25 @@
-import type { BookIdentity } from "./book";
+import type { BookIdentity } from './book';
 
 function clean(value: string | null | undefined): string {
-  return value?.replace(/\s+/g, " ").trim() ?? "";
+  return value?.replace(/\s+/g, ' ').trim() ?? '';
 }
 
 function documentText(root: Document): string {
   const body = root.body;
-  if (!body) return "";
-  return (body as HTMLElement).innerText || body.textContent || "";
+  if (!body) return '';
+  return (body as HTMLElement).innerText || body.textContent || '';
 }
 
 function findLabeledValue(root: Document, label: string): string | undefined {
-  const match = documentText(root).match(new RegExp(`${label}:\\s*([^\\n]+)`, "i"));
+  const match = documentText(root).match(new RegExp(`${label}:\\s*([^\\n]+)`, 'i'));
   return clean(match?.[1]) || undefined;
 }
 
 function parseOgTitle(root: Document): { title?: string; author?: string } {
-  const raw = clean(root.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.content)
-    .replace(/\s*\|\s*The StoryGraph\s*$/i, "");
+  const raw = clean(root.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.content).replace(
+    /\s*\|\s*The StoryGraph\s*$/i,
+    ''
+  );
 
   if (!raw) return {};
 
@@ -30,7 +32,7 @@ function parseOgTitle(root: Document): { title?: string; author?: string } {
 }
 
 export function findBookHeading(root: Document, expectedTitle?: string): HTMLElement | null {
-  const headings = [...root.querySelectorAll<HTMLElement>("h1, h2, h3")];
+  const headings = [...root.querySelectorAll<HTMLElement>('h1, h2, h3')];
   const normalizedExpected = clean(expectedTitle).toLowerCase();
 
   if (normalizedExpected) {
@@ -38,10 +40,12 @@ export function findBookHeading(root: Document, expectedTitle?: string): HTMLEle
     if (exact) return exact;
   }
 
-  return headings.find((heading) => {
-    const text = clean(heading.textContent);
-    return text && !/^(editions|description|community reviews|content warnings)$/i.test(text);
-  }) ?? null;
+  return (
+    headings.find((heading) => {
+      const text = clean(heading.textContent);
+      return text && !/^(editions|description|community reviews|content warnings)$/i.test(text);
+    }) ?? null
+  );
 }
 
 function findAuthorNearHeading(root: Document, heading: HTMLElement | null): string {
@@ -52,9 +56,7 @@ function findAuthorNearHeading(root: Document, heading: HTMLElement | null): str
     if (text) return text;
   }
 
-  return clean(
-    root.querySelector<HTMLElement>('a[href*="/authors/"], [rel="author"]')?.textContent
-  );
+  return clean(root.querySelector<HTMLElement>('a[href*="/authors/"], [rel="author"]')?.textContent);
 }
 
 export function extractStoryGraphBook(
@@ -67,8 +69,8 @@ export function extractStoryGraphBook(
   const title = metadata.title || clean(heading?.textContent);
   const author = metadata.author || findAuthorNearHeading(root, heading);
 
-  const isbnCandidate = findLabeledValue(root, "ISBN/UID");
-  const isbn = isbnCandidate?.match(/[0-9Xx-]{10,17}/)?.[0]?.replace(/-/g, "");
+  const isbnCandidate = findLabeledValue(root, 'ISBN/UID');
+  const isbn = isbnCandidate?.match(/[0-9Xx-]{10,17}/)?.[0]?.replace(/-/g, '');
 
   if (!title || !author) return null;
 

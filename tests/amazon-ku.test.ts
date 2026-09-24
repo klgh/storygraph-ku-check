@@ -1,12 +1,12 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { collectKuEvidence, offerAreaReady } from "../src/domain/amazon-ku";
+import { afterEach, describe, expect, it } from 'vitest';
+import { collectKuEvidence, offerAreaReady } from '../src/domain/amazon-ku';
 
 afterEach(() => {
-  document.body.innerHTML = "";
+  document.body.innerHTML = '';
 });
 
-describe("collectKuEvidence", () => {
-  it("detects subscriber Included with Kindle Unlimited copy in the buybox", () => {
+describe('collectKuEvidence', () => {
+  it('detects subscriber Included with Kindle Unlimited copy in the buybox', () => {
     document.body.innerHTML = `
       <div id="buybox">
         <img alt="Kindle Unlimited" src="https://m.media-amazon.com/images/I/ku.svg" />
@@ -18,10 +18,10 @@ describe("collectKuEvidence", () => {
 
     const evidence = collectKuEvidence(document);
     expect(evidence.some((item) => /included with kindle unlimited/i.test(item))).toBe(true);
-    expect(evidence).toContain("Kindle Unlimited");
+    expect(evidence).toContain('Kindle Unlimited');
   });
 
-  it("detects the non-subscriber KU upsell widget without Included copy", () => {
+  it('detects the non-subscriber KU upsell widget without Included copy', () => {
     document.body.innerHTML = `
       <div id="buybox">
         <div id="Kibbo-KINDLE_UNLIMITED_UPSELL-Desktop">
@@ -39,11 +39,13 @@ describe("collectKuEvidence", () => {
 
     const evidence = collectKuEvidence(document);
     expect(evidence.length).toBeGreaterThan(0);
-    expect(evidence.some((item) => /unlimited reading|read and listen for free|Kindle Unlimited/i.test(item))).toBe(true);
-    expect(evidence).toContain("Kindle Unlimited offer widget");
+    expect(evidence.some((item) => /unlimited reading|read and listen for free|Kindle Unlimited/i.test(item))).toBe(
+      true
+    );
+    expect(evidence).toContain('Kindle Unlimited offer widget');
   });
 
-  it("detects the Kindle format swatch KU icon", () => {
+  it('detects the Kindle format swatch KU icon', () => {
     document.body.innerHTML = `
       <div id="tmmSwatches">
         <div id="tmm-grid-swatch-KINDLE">
@@ -55,10 +57,10 @@ describe("collectKuEvidence", () => {
       </div>
     `;
 
-    expect(collectKuEvidence(document)).toContain("Kindle Unlimited icon");
+    expect(collectKuEvidence(document)).toContain('Kindle Unlimited icon');
   });
 
-  it("ignores KU mentions outside the offer area", () => {
+  it('ignores KU mentions outside the offer area', () => {
     document.body.innerHTML = `
       <div id="buybox">
         <button>Buy now for $9.99</button>
@@ -72,7 +74,7 @@ describe("collectKuEvidence", () => {
     expect(collectKuEvidence(document)).toEqual([]);
   });
 
-  it("does not treat Prime-only upsell as KU", () => {
+  it('does not treat Prime-only upsell as KU', () => {
     document.body.innerHTML = `
       <div id="buybox">
         <div id="Kibbo-KINDLE_PRIME_READING_UPSELL-Desktop">
@@ -86,13 +88,13 @@ describe("collectKuEvidence", () => {
   });
 });
 
-describe("offerAreaReady", () => {
-  it("is true when a visible buybox has content", () => {
+describe('offerAreaReady', () => {
+  it('is true when a visible buybox has content', () => {
     document.body.innerHTML = `<div id="buybox"><button>Buy now</button></div>`;
     expect(offerAreaReady(document)).toBe(true);
   });
 
-  it("is false when the offer shell is missing", () => {
+  it('is false when the offer shell is missing', () => {
     document.body.innerHTML = `<h1 id="productTitle">A Book</h1>`;
     expect(offerAreaReady(document)).toBe(false);
   });

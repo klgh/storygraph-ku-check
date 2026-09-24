@@ -6,35 +6,21 @@
   "version": "0.0.0.1",
   "manifest_version": 3,
   "minimum_chrome_version": "130",
-  "permissions": [
-    "storage",
-    "alarms"
-  ],
-  "host_permissions": [
-    "https://app.thestorygraph.com/*",
-    "https://www.amazon.com/*"
-  ],
+  "permissions": ["storage", "alarms"],
+  "host_permissions": ["https://app.thestorygraph.com/*", "https://www.amazon.com/*"],
   "background": {
     "service_worker": "service-worker.js",
     "type": "module"
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://app.thestorygraph.com/*"
-      ],
-      "js": [
-        "storygraph.js"
-      ],
+      "matches": ["https://app.thestorygraph.com/*"],
+      "js": ["storygraph.js"],
       "run_at": "document_idle"
     },
     {
-      "matches": [
-        "https://www.amazon.com/*"
-      ],
-      "js": [
-        "amazon.js"
-      ],
+      "matches": ["https://www.amazon.com/*"],
+      "js": ["amazon.js"],
       "run_at": "document_idle"
     }
   ]
