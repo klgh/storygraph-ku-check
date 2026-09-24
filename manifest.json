@@ -1,8 +1,11 @@
 {
+  "$schema": "https://json.schemastore.org/chrome-manifest",
   "name": "StoryGraph Kindle Unlimited Checker",
-  "description": "Checks whether a StoryGraph book appears to be available through Kindle Unlimited.",
+  "description": "Check whether a StoryGraph book is included with Kindle Unlimited.",
+  "homepage_url": "https://github.com/klgh/storygraph-ku-check",
   "version": "0.0.0.1",
   "manifest_version": 3,
+  "minimum_chrome_version": "130",
   "permissions": [
     "storage",
     "alarms"

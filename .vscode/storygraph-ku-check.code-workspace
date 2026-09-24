@@ -7,5 +7,16 @@
 	"settings": {
 		"workbench.colorTheme": "Anorak: Slate Orchard Light",
 		"editor.fontFamily": "Kode Mono",
+		"json.format.enable": true,
+		"json.schemaDownload.enable": true,
+		"json.schemas": [
+			{
+				"fileMatch": [
+					"manifest.json"
+				],
+				"url": "https://json.schemastore.org/chrome-manifest"
+			}
+		],
+		"json.validate.enable": true,
 	}
 }
