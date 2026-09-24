@@ -114,8 +114,7 @@ search terms for that book.
 
 **Privacy Policy URL** [REQUIRED] https://github.com/klgh/storygraph-ku-check/blob/main/PRIVACY.md
 
-The page is public. Paste it into the dashboard only after this version of `PRIVACY.md` is on `main`. The copy currently
-on GitHub says the extension does not use storage and does not mention Amazon.
+The page is public and matches this policy. Paste that URL into the dashboard.
 
 ### Privacy policy draft (to host)
 
@@ -218,7 +217,7 @@ This section is for submission prep, not the public listing.
   affiliation. Reviewers sometimes reject trademarked names; if that happens, rename to a descriptive form such as
   “Kindle Unlimited check for StoryGraph.”
 - Store images are ready: `assets/icon128.png` and `assets/Screenshot1.png` through `assets/Screenshot4.png`, each screenshot 1280×800. Upload them in the dashboard. They are not part of the extension zip.
-- The privacy policy URL is live, but GitHub `main` still has the old text until the updated `PRIVACY.md` is pushed.
+- Privacy policy URL is live and matches the extension: https://github.com/klgh/storygraph-ku-check/blob/main/PRIVACY.md
 - A check opens Amazon in a background tab. The tab closes when the check finishes. If the check times out, that tab can
   stay open.
 - A check can take up to about 45 seconds.
