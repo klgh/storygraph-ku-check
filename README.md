@@ -1,17 +1,21 @@
-# StoryGraph KU Checker v0.7
+# StoryGraph Kindle Unlimited Checker
 
-Chrome extension MVP that checks whether a StoryGraph book appears to be included with Kindle Unlimited.
+Chrome extension that checks whether a StoryGraph book is included with Kindle Unlimited.
 
-## v0.7
+## Features
 
-- Replaces strict title/author substring matching with weighted title-token and author-name matching.
-- Accepts Amazon subtitles, series labels, edition text, and author role labels.
-- Uses surname matching when Amazon formats the author byline differently.
-- Uses a new cache namespace so older uncertain results are ignored.
+## Installation
 
-Load the `dist` directory as an unpacked Chrome extension.
+1. Clone the repository
+2. Run `npm install`
+3. Run `npm run build`
+4. Load the `dist` directory as an unpacked Chrome extension.
 
+## Usage
 
-## v0.8 matching change
+1. Open the StoryGraph book page
+2. The extension will check if the book is included with Kindle Unlimited
 
-After the extension selects a sufficiently strong Amazon search result, the product page is treated as the matched book. Amazon subtitle/byline formatting no longer downgrades every result to “Possible match.” The product page now resolves to **Available on Kindle Unlimited** or **Kindle Unlimited was not detected**.
+## Contributing
+
+Issues and feature requests are welcome. Please open an issue or submit a pull request.
