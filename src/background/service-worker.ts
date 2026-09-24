@@ -61,13 +61,17 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
   if (message.type === "CHECK_BOOK") {
     void (async () => {
       if (sender.tab?.id == null) throw new Error("StoryGraph tab was not available");
-      const cached = await getCachedResult(message.payload);
-      if (cached) {
-        const checkId = `cached-${crypto.randomUUID()}`;
-        await chrome.storage.local.set({ [deliveryKey(checkId)]: cached });
-        await chrome.tabs.sendMessage(sender.tab.id, { type: "KU_RESULT", payload: cached, checkId } satisfies ExtensionMessage).catch(() => undefined);
-        sendResponse({ ok: true, cached: true, checkId });
-        return;
+      // Explicit Check / Check again always re-queries Amazon. Cache is only for
+      // hydrating the panel on page load without opening a tab.
+      if (!message.force) {
+        const cached = await getCachedResult(message.payload);
+        if (cached) {
+          const checkId = `cached-${crypto.randomUUID()}`;
+          await chrome.storage.local.set({ [deliveryKey(checkId)]: cached });
+          await chrome.tabs.sendMessage(sender.tab.id, { type: "KU_RESULT", payload: cached, checkId } satisfies ExtensionMessage).catch(() => undefined);
+          sendResponse({ ok: true, cached: true, checkId });
+          return;
+        }
       }
 
       const checkId = crypto.randomUUID();

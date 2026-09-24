@@ -67,7 +67,7 @@ function paintChecking(host: HTMLElement): void {
 async function startCheck(book: BookIdentity, host: HTMLElement): Promise<void> {
   paintChecking(host);
 
-  const message: ExtensionMessage = { type: "CHECK_BOOK", payload: book };
+  const message: ExtensionMessage = { type: "CHECK_BOOK", payload: book, force: true };
   const response = await chrome.runtime.sendMessage(message).catch(() => null);
   if (!response?.ok || !response.checkId) {
     paintKuPanel(host, {

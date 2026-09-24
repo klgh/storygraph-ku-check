@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"workbench.colorTheme": "Anorak: Slate Orchard Light",
+		"editor.fontFamily": "Kode Mono",
+	}
+}

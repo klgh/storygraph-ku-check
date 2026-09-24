@@ -1,48 +1,7 @@
 import type { BookIdentity, KuCheckResult } from "../domain/book";
 import { pickBestSearchResult } from "../domain/amazon-match";
+import { collectKuEvidence, offerAreaReady } from "../domain/amazon-ku";
 import type { ExtensionMessage } from "../shared/messages";
-
-const KU_PATTERNS = [
-  /included\s+with\s+kindle\s+unlimited/i,
-  /kindle\s+unlimited/i,
-  /read\s+for\s+free/i,
-  /\$0\.00\s+(?:to\s+buy\s+)?(?:with|after)\s+kindle\s+unlimited/i
-];
-
-const OFFER_SELECTORS = [
-  "#buybox",
-  "#buyBoxAccordion",
-  "#tmmSwatches",
-  "#formats",
-  "#mediaTab_content_landing",
-  "#digitalDashHighProminenceBadge",
-  "#kindleUnlimitedBadge",
-  "[data-a-expander-name='kindleUnlimited']",
-  "[data-csa-c-content-id*='kindle']",
-  "[id*='kindleUnlimited']",
-  "[class*='kindleUnlimited']"
-].join(",");
-
-function visibleText(node: HTMLElement): string {
-  const style = getComputedStyle(node);
-  if (style.display === "none" || style.visibility === "hidden") return "";
-  return node.innerText?.replace(/\s+/g, " ").trim() ?? "";
-}
-
-function collectEvidence(root: ParentNode = document): string[] {
-  const evidence = new Set<string>();
-
-  for (const node of root.querySelectorAll<HTMLElement>(OFFER_SELECTORS)) {
-    const text = visibleText(node);
-    if (!text) continue;
-    for (const pattern of KU_PATTERNS) {
-      const match = text.match(pattern)?.[0];
-      if (match) evidence.add(match);
-    }
-  }
-
-  return [...evidence];
-}
 
 function productTitle(): string | undefined {
   return document.querySelector<HTMLElement>("#productTitle, #ebooksProductTitle, h1")?.innerText.trim();
@@ -122,19 +81,18 @@ function waitForPage(book: BookIdentity, checkId: string): void {
       document.querySelector('link[rel="canonical"][href*="/dp/"]')
     );
 
-    const evidence = collectEvidence();
+    const evidence = collectKuEvidence();
     if (pageLooksReady && evidence.length > 0) {
       void sendResult(book, checkId, "AVAILABLE", evidence);
       return;
     }
 
-    const offerAreaReady = Boolean(document.querySelector(OFFER_SELECTORS));
-    if (pageLooksReady && offerAreaReady) readyPolls += 1;
+    // Personalized KU copy can hydrate after the shell buybox. Require a
+    // longer settle when no KU widget has appeared yet.
+    if (pageLooksReady && offerAreaReady()) readyPolls += 1;
 
-    // Once the selected product page and its offer area have rendered, the
-    // result is definitive for this check: KU evidence was either found or it
-    // was not. Amazon's long subtitles/bylines no longer cause UNCERTAIN.
-    if (readyPolls >= 8 || Date.now() - startedAt >= timeoutMs) {
+    const settlePolls = document.getElementById("Kibbo-KINDLE_UNLIMITED_UPSELL-Desktop") ? 4 : 12;
+    if (readyPolls >= settlePolls || Date.now() - startedAt >= timeoutMs) {
       void sendResult(book, checkId, "NOT_DETECTED", []);
       return;
     }

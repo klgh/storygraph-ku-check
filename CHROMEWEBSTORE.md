@@ -20,6 +20,7 @@ FEATURES
 • Links to the Amazon page that was used for the result
 
 HOW TO USE
+
 1. Open a book page on StoryGraph (app.thestorygraph.com)
 2. Click Check Kindle Unlimited
 3. Review the status that appears on the StoryGraph page
@@ -53,7 +54,7 @@ English
 ## Graphics & Assets
 
 | Asset | Dimensions | Status | Filename |
-|-------|-----------|--------|----------|
+| ------- | ----------- | -------- | ---------- |
 | Store Icon [REQUIRED] | 128×128 PNG | ⬜ Not created | |
 | Screenshot 1 [REQUIRED] | 1280×800 or 640×400 | ⬜ Not created | |
 | Screenshot 2 [RECOMMENDED] | 1280×800 or 640×400 | ⬜ Not created | |
@@ -64,6 +65,7 @@ English
 | Marquee Promo Tile | 1400×560 | ⬜ Not created | |
 
 ### Screenshot Notes
+
 1. A StoryGraph book page with the Check Kindle Unlimited control and a status of “Available on Kindle Unlimited,” plus the View on Amazon link.
 2. The same control showing “Kindle Unlimited was not detected.”
 3. The same control showing “No matching Kindle result found” or a timeout message.
@@ -75,7 +77,7 @@ Do not imply affiliation with StoryGraph or Amazon. Do not crop in either compan
 Copy these into the Chrome Web Store dashboard fields for each permission.
 
 | Permission | Type | Justification |
-|------------|------|---------------|
+| ------------ | ------ | --------------- |
 | storage | permissions | Saves the outcome of a Kindle Unlimited check on the user’s device: the book title, author, optional ISBN, the result (available, not detected, no match), the Amazon page that was used, and when the check ran. Results are kept for 24 hours so a repeat check on the same book can show the last answer without opening Amazon again. In-progress checks are also stored briefly so the StoryGraph page can show the outcome when Amazon finishes. Timed-out checks are not saved. This data stays on the device and is not synced across browsers. |
 | alarms | permissions | A check opens Amazon and waits for a result. If Amazon does not finish in time, an alarm ends the wait after about 45 seconds and the StoryGraph page shows that the check timed out instead of remaining on “Checking” indefinitely. |
 | https://app.thestorygraph.com/* | host_permissions | The extension only runs on StoryGraph. This access is used to read the title, author, and ISBN of the book page the user is viewing, and to show the Check Kindle Unlimited control and status on that page. It is not used on other websites. |
@@ -90,7 +92,7 @@ Copy these into the Chrome Web Store dashboard fields for each permission.
 The extension reads book details from the page the user is viewing and stores check results on the device. It does not send data to the developer. Running a check opens Amazon, so Amazon receives a normal page request that includes the search terms for that book.
 
 | Data Type | Collected? | Transmitted Off-Device? | Purpose | Shared with Third Parties? |
-|-----------|-----------|------------------------|---------|---------------------------|
+| ----------- | ----------- | ------------------------ | --------- | --------------------------- |
 | Personally identifiable info | No | No | — | — |
 | Health info | No | No | — | — |
 | Financial info | No | No | — | — |
@@ -102,6 +104,7 @@ The extension reads book details from the page the user is viewing and stores ch
 | Website content | Yes | Yes — only to Amazon, and only when the user clicks Check Kindle Unlimited | Reads title, author, and ISBN from the StoryGraph book page. Opens Amazon with those search terms and reads Kindle Unlimited offer text from the matching product page. | No. The developer does not share data. Amazon receives the search as a normal visit the user initiated by clicking Check. |
 
 ### Data Use Certification
+
 - [x] Data is NOT sold to third parties
 - [x] Data is NOT used for purposes unrelated to the extension's core functionality
 - [x] Data is NOT used for creditworthiness or lending purposes
@@ -180,12 +183,14 @@ https://github.com/klgh/storygraph-ku-check
 | Version | Date | Changes | Status |
 |---------|------|---------|--------|
 | 0.8.0 | 2026-09-04 | After a strong Amazon search match, the product page is treated as the matched book and reported as available on Kindle Unlimited or not detected. | Draft |
+| 0.8.2 | 2026-09-24 | Added a timeout to the check process to prevent the page from hanging indefinitely. | Draft |
 
 ## Review Notes
 
 This section is for submission prep, not the public listing.
 
 ### Known Issues / Limitations
+
 - The store name includes “StoryGraph” and “Kindle Unlimited.” The listing and privacy policy must state there is no affiliation. Reviewers sometimes reject trademarked names; if that happens, rename to a descriptive form such as “Kindle Unlimited check for StoryGraph.”
 - No store icon or screenshots exist yet. Submission will fail without a 128×128 icon and at least one 1280×800 or 640×400 screenshot.
 - Privacy policy URL is not live yet.
@@ -194,4 +199,5 @@ This section is for submission prep, not the public listing.
 - Amazon access is site-wide on amazon.com because search and product URLs vary. The Amazon script only completes a lookup when the user started a check from StoryGraph.
 
 ### Rejection History
+
 None yet.

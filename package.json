@@ -1,13 +1,13 @@
 {
   "name": "storygraph-ku-checker",
-  "version": "0.8.0",
+  "version": "0.8.2",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node scripts/build.mjs --watch",
     "build": "node scripts/build.mjs",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "dev": "node scripts/build.mjs --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.287",
