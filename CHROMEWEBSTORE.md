@@ -49,17 +49,17 @@ up on Amazon again.
 
 | Asset                          | Dimensions          | Status         | Filename |
 | ------------------------------ | ------------------- | -------------- | -------- |
-| Store Icon [REQUIRED]          | 128×128 PNG         | ⬜ Not created |          |
-| Screenshot 1 [REQUIRED]        | 1280×800 or 640×400 | ⬜ Not created |          |
-| Screenshot 2 [RECOMMENDED]     | 1280×800 or 640×400 | ⬜ Not created |          |
-| Screenshot 3 [RECOMMENDED]     | 1280×800 or 640×400 | ⬜ Not created |          |
-| Screenshot 4                   | 1280×800 or 640×400 | ⬜ Not created |          |
+| Store Icon [REQUIRED]          | 128×128 PNG         | ✅ Ready       | assets/icon128.png |
+| Screenshot 1 [REQUIRED]        | 1280×800            | ✅ Ready       | assets/Screenshot1.png |
+| Screenshot 2 [RECOMMENDED]     | 1280×800            | ✅ Ready       | assets/Screenshot2.png |
+| Screenshot 3 [RECOMMENDED]     | 1280×800            | ✅ Ready       | assets/Screenshot3.png |
+| Screenshot 4                   | 1280×800            | ✅ Ready       | assets/Screenshot4.png |
 | Screenshot 5                   | 1280×800 or 640×400 | ⬜ Not created |          |
 | Small Promo Tile [RECOMMENDED] | 440×280             | ⬜ Not created |          |
 | Marquee Promo Tile             | 1400×560            | ⬜ Not created |          |
 
-The extension package has no toolbar icon. Chrome will use its default icon until you add icon files. The store listing
-still requires a separate 128×128 PNG uploaded in the dashboard.
+Upload `assets/icon128.png` in the store dashboard. The same file is also the 128px icon in the extension package.
+`assets/icon16.png`, `assets/icon32.png`, and `assets/icon48.png` are the smaller package icons.
 
 ### Screenshot Notes
 
@@ -112,8 +112,10 @@ search terms for that book.
 
 ## Privacy Policy
 
-**Privacy Policy URL** [REQUIRED] Not hosted yet. Publish the draft below at a stable public URL (GitHub Pages or a
-public repo page) before submission. The dashboard link must load without a login.
+**Privacy Policy URL** [REQUIRED] https://github.com/klgh/storygraph-ku-check/blob/main/PRIVACY.md
+
+The page is public. Paste it into the dashboard only after this version of `PRIVACY.md` is on `main`. The copy currently
+on GitHub says the extension does not use storage and does not mention Amazon.
 
 ### Privacy policy draft (to host)
 
@@ -201,14 +203,12 @@ This section is for submission prep, not the public listing.
 
 ### Before the first submission
 
-1. Finish creating the publisher named Kaleigh Scruggs.
-2. Host the privacy policy draft at a public URL and paste that URL into the dashboard.
-3. Upload a 128×128 store icon and at least one 1280×800 or 640×400 screenshot.
-4. Run `npm run build`, then zip the files inside `dist/` (the manifest and the three script files). Do not zip the
-   repository.
-5. Create a new item, upload the zip, and paste the listing, permission justifications, and privacy answers from this
+1. In the dashboard, upload `assets/icon128.png`, then `assets/Screenshot1.png` through `assets/Screenshot4.png`. Leave these PNGs out of the extension zip.
+2. Run `npm run build`, then zip the files inside `dist/` (the manifest, the three script files, and `assets/`). Do not
+   zip the repository.
+3. Create a new item, upload the zip, and paste the listing, permission justifications, and privacy answers from this
    file.
-6. On the privacy form, answer that the extension collects user data. Declare user activity and website content. Leave
+4. On the privacy form, answer that the extension collects user data. Declare user activity and website content. Leave
    the other data types off. Certify that data is not sold, not used for unrelated purposes, and not used for
    creditworthiness.
 
@@ -217,9 +217,8 @@ This section is for submission prep, not the public listing.
 - The store name includes “StoryGraph” and “Kindle Unlimited.” The listing and privacy policy state there is no
   affiliation. Reviewers sometimes reject trademarked names; if that happens, rename to a descriptive form such as
   “Kindle Unlimited check for StoryGraph.”
-- No store icon or screenshots exist yet. Submission will fail without a 128×128 icon and at least one 1280×800 or
-  640×400 screenshot.
-- Privacy policy URL is not live yet.
+- Store images are ready: `assets/icon128.png` and `assets/Screenshot1.png` through `assets/Screenshot4.png`, each screenshot 1280×800. Upload them in the dashboard. They are not part of the extension zip.
+- The privacy policy URL is live, but GitHub `main` still has the old text until the updated `PRIVACY.md` is pushed.
 - A check opens Amazon in a background tab. The tab closes when the check finishes. If the check times out, that tab can
   stay open.
 - A check can take up to about 45 seconds.
