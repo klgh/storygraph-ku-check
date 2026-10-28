@@ -1,17 +1,17 @@
-![StoryGraph Kindle Unlimited Checker icon](assets/icon128.png)
+![StoryGraph Kindle+ Checker icon](assets/icon128.png)
 
-# StoryGraph Kindle Unlimited Checker
+# StoryGraph Kindle+ Checker
 
-Check Kindle Unlimited availability while browsing books on StoryGraph.
+Check Kindle+ availability while browsing books on StoryGraph.
 
 [Install from the Chrome Web Store](https://chromewebstore.google.com/detail/storygraph-kindle-unlimit/emckkkkmblieobchogfjhipmijcfgfpn)
 
-![Check Kindle Unlimited while browsing StoryGraph, with an example result and View on Amazon link](assets/store-overview.png)
+![Check Kindle+ while browsing StoryGraph, with an example result and View on Amazon link](assets/store-overview.png)
 
 ## How to use
 
 1. Install the extension, then open a book page on [StoryGraph](https://app.thestorygraph.com).
-2. Click **Check Kindle Unlimited** in the panel on the book page.
+2. Click **Check Kindle+** in the panel on the book page.
 3. Review the result. Use **View on Amazon**, when available, to confirm the matching edition and offer.
 
 There is no toolbar button or popup. If the book page was already open when you installed the extension, refresh it.
@@ -22,8 +22,8 @@ Amazon again.
 ## What to expect
 
 - Checks **Amazon.com** only. Other Amazon marketplaces are not supported.
-- **Available on Kindle Unlimited** means the matching Amazon page showed a Kindle Unlimited offer when checked.
-- **Kindle Unlimited was not detected** does not prove the book is unavailable. Confirm the edition and current offer
+- **Available on Kindle+** means the matching Amazon page showed a Kindle+ offer when checked.
+- **Kindle+ was not detected** does not prove the book is unavailable. Confirm the edition and current offer
   on Amazon.
 - A check may find no matching Kindle edition or time out. It can take up to about 45 seconds, and an incorrect edition
   can sometimes be selected.

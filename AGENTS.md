@@ -2,7 +2,7 @@
 
 ## Project overview
 
-Chrome Manifest V3 extension that checks whether a book on StoryGraph is included with Kindle Unlimited. It has no
+Chrome Manifest V3 extension that checks whether a book on StoryGraph is included with Kindle+. It has no
 toolbar action and no popup. On a StoryGraph book page it injects a check panel. Clicking Check opens a background
 Amazon tab, reads the Kindle search or product page, then shows the result back on StoryGraph.
 
@@ -40,7 +40,7 @@ Load the built extension in Chrome as an unpacked extension. There is no action 
   scored again.
 - `src/background/service-worker.ts` — starts the check, opens the Amazon tab, stores the result, and times out with an
   alarm.
-- `src/domain/` — book types, StoryGraph extraction, Amazon search scoring, Kindle Unlimited evidence, text
+- `src/domain/` — book types, StoryGraph extraction, Amazon search scoring, Kindle+ evidence, text
   normalization.
 - `src/shared/messages.ts` — message union between the page scripts and the service worker.
 - `src/storage/cache.ts` — 24-hour result cache in `chrome.storage.local`.
@@ -60,7 +60,7 @@ Keep these constraints unless the task changes them:
 - Amazon opens in a background tab. The tab is closed when an `AMAZON_RESULT` arrives. A timeout can leave that tab
   open.
 - The search-result score is the match gate. A strong search match navigates to the product page. A weak search becomes
-  `NO_MATCH`. On the product page, Kindle Unlimited evidence becomes `AVAILABLE`; otherwise the result is
+  `NO_MATCH`. On the product page, Kindle+ evidence becomes `AVAILABLE`; otherwise the result is
   `NOT_DETECTED`.
 - `UNCERTAIN` exists on `KuStatus` and in panel copy. The Amazon script does not assign it.
 - `extractStoryGraphBook` lives in `src/domain/storygraph-extract.ts`. Content script and tests import it from there.

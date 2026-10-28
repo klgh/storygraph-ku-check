@@ -1,23 +1,29 @@
 /**
- * Kindle Unlimited detection for Amazon product pages.
+ * Kindle+ detection for Amazon product pages.
+ *
+ * The subscription was renamed from Kindle Unlimited to Kindle+. Product pages
+ * can still use either name, and Amazon's offer widget ids still say
+ * KINDLE_UNLIMITED. Match both.
  *
  * Amazon varies the buybox by account state:
- * - KU subscriber: "Included with kindle unlimited" / "$0.00 to buy after credits"
- * - Non-subscriber: `#Kibbo-KINDLE_UNLIMITED_UPSELL-Desktop` with alt="Kindle Unlimited"
+ * - Subscriber: "Included with Kindle+" / "Included with kindle unlimited" / "$0.00 to buy after credits"
+ * - Non-subscriber: `#Kibbo-KINDLE_UNLIMITED_UPSELL-Desktop` with a Kindle+ or Kindle Unlimited logo
  *   and copy like "Unlimited reading" / "Read and Listen for Free"
  *
- * Prime Reading upsell alone is not KU.
+ * Prime Reading upsell alone is not Kindle+.
  */
 
+const KINDLE_PLUS_NAME = String.raw`kindle\s*(?:\+|plus|unlimited)`;
+
 export const KU_TEXT_PATTERNS: RegExp[] = [
-  /included\s+with\s+kindle\s+unlimited/i,
-  /free\s+with\s+kindle\s+unlimited/i,
-  // KU CTA; negative lookahead avoids Prime Reading's "...for free with Prime"
+  new RegExp(String.raw`included\s+with\s+${KINDLE_PLUS_NAME}`, 'i'),
+  new RegExp(String.raw`free\s+with\s+${KINDLE_PLUS_NAME}`, 'i'),
+  // Kindle+ CTA; negative lookahead avoids Prime Reading's "...for free with Prime"
   /read\s+(?:and\s+listen\s+)?for\s+free(?!\s+with\s+prime)/i,
   /unlimited\s+reading/i,
   /\$0\.00\s+to\s+buy\s+after\s+credits/i,
-  /\$0\.00\s+(?:to\s+buy\s+)?(?:with|after)\s+kindle\s+unlimited/i,
-  /kindle\s+unlimited/i,
+  new RegExp(String.raw`\$0\.00\s+(?:to\s+buy\s+)?(?:with|after)\s+${KINDLE_PLUS_NAME}`, 'i'),
+  new RegExp(KINDLE_PLUS_NAME, 'i'),
 ];
 
 /** Offer/buybox regions — keep scoped so related-book promos do not count. */
@@ -43,8 +49,12 @@ export const OFFER_SELECTOR_LIST = [
   "[data-csa-c-content-id*='kuUpsellAccordion']",
   "[id*='kindleUnlimited']",
   "[id*='KINDLE_UNLIMITED']",
+  "[id*='kindlePlus']",
+  "[id*='KINDLE_PLUS']",
   "[id*='kuUpsell']",
   "[class*='kindleUnlimited']",
+  "[class*='kindlePlus']",
+  "[class*='kindle-plus']",
   "[class*='ku-promo']",
 ];
 
@@ -96,16 +106,16 @@ export function collectKuEvidence(root: ParentNode = document): string[] {
       if (!isVisiblyRenderable(img)) continue;
       const alt = img.getAttribute('alt') ?? '';
       const src = img.getAttribute('src') ?? '';
-      if (/kindle\s*unlimited/i.test(alt) || /kindleunlimited/i.test(src)) {
-        evidence.add(alt.trim() || 'Kindle Unlimited logo');
+      if (/kindle\s*(?:\+|plus|unlimited)/i.test(alt) || /kindle[-_]?unlimited|kindle[-_]?plus/i.test(src)) {
+        evidence.add(alt.trim() || 'Kindle+ logo');
       }
     }
 
     for (const icon of node.querySelectorAll<HTMLElement>(
-      "[class*='a-icon-kindle-unlimited'], [class*='kindle-unlimited']"
+      "[class*='a-icon-kindle-unlimited'], [class*='kindle-unlimited'], [class*='a-icon-kindle-plus'], [class*='kindle-plus']"
     )) {
       if (isVisiblyRenderable(icon)) {
-        evidence.add('Kindle Unlimited icon');
+        evidence.add('Kindle+ icon');
         break;
       }
     }
@@ -113,7 +123,7 @@ export function collectKuEvidence(root: ParentNode = document): string[] {
 
   for (const node of root.querySelectorAll<HTMLElement>(KU_STRUCTURAL_SELECTORS)) {
     if (isVisiblyRenderable(node)) {
-      evidence.add('Kindle Unlimited offer widget');
+      evidence.add('Kindle+ offer widget');
       break;
     }
   }

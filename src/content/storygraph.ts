@@ -61,7 +61,7 @@ function paintChecking(host: HTMLElement): void {
     host,
     {
       tone: 'checking',
-      title: 'Checking Kindle Unlimited',
+      title: 'Checking Kindle+',
       detail: 'Looking up the matching Kindle edition on Amazon.',
       checkLabel: 'Checking',
       checkDisabled: true,
@@ -82,7 +82,7 @@ async function startCheck(book: BookIdentity, host: HTMLElement): Promise<void> 
         tone: 'error',
         title: 'Unable to start check',
         detail: 'The extension could not reach Amazon. Try again.',
-        checkLabel: 'Check Kindle Unlimited',
+        checkLabel: 'Check Kindle+',
         checkDisabled: false,
       },
       () => {
