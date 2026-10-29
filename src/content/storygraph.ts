@@ -1,5 +1,5 @@
 import type { BookIdentity, KuCheckResult } from '../domain/book';
-import { extractStoryGraphBook, findBookHeading } from '../domain/storygraph-extract';
+import { extractStoryGraphBook, findBookHeading, panelInsertionPoint } from '../domain/storygraph-extract';
 import { paintKuPanel, viewForResult } from './storygraph-panel';
 import type { ExtensionMessage } from '../shared/messages';
 import { getCachedResult } from '../storage/cache';
@@ -22,7 +22,7 @@ function ensureHost(bookTitle: string): HTMLElement | null {
 
   const host = document.createElement('div');
   host.id = ROOT_ID;
-  heading.insertAdjacentElement('afterend', host);
+  panelInsertionPoint(heading).insertAdjacentElement('afterend', host);
   return host;
 }
 

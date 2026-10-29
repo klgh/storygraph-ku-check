@@ -31,21 +31,59 @@ function parseOgTitle(root: Document): { title?: string; author?: string } {
   return { title: raw };
 }
 
+const SECTION_HEADING = /^(editions|description|community reviews|content warnings)$/i;
+
+function headingLabel(heading: HTMLElement): string {
+  const clone = heading.cloneNode(true) as HTMLElement;
+  clone.querySelectorAll('.sr-only, svg, [aria-hidden="true"]').forEach((node) => node.remove());
+  return clean(clone.textContent);
+}
+
+function isRendered(element: HTMLElement): boolean {
+  const view = element.ownerDocument.defaultView;
+  if (!view) return true;
+
+  let node: HTMLElement | null = element;
+  while (node) {
+    const style = view.getComputedStyle(node);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+    node = node.parentElement;
+  }
+  return true;
+}
+
 export function findBookHeading(root: Document, expectedTitle?: string): HTMLElement | null {
   const headings = [...root.querySelectorAll<HTMLElement>('h1, h2, h3')];
+  const rendered = headings.filter(isRendered);
+  const candidates = rendered.length > 0 ? rendered : headings;
   const normalizedExpected = clean(expectedTitle).toLowerCase();
 
   if (normalizedExpected) {
-    const exact = headings.find((heading) => clean(heading.textContent).toLowerCase() === normalizedExpected);
+    const exact = candidates.find((heading) => headingLabel(heading).toLowerCase() === normalizedExpected);
     if (exact) return exact;
   }
 
   return (
-    headings.find((heading) => {
-      const text = clean(heading.textContent);
-      return text && !/^(editions|description|community reviews|content warnings)$/i.test(text);
+    candidates.find((heading) => {
+      const text = headingLabel(heading);
+      return text && !SECTION_HEADING.test(text);
     }) ?? null
   );
+}
+
+export function panelInsertionPoint(heading: HTMLElement): HTMLElement {
+  const parent = heading.parentElement;
+  if (parent && /^editions\b/i.test(headingLabel(heading))) return parent;
+  return heading;
+}
+
+function titleFromHeading(heading: HTMLElement | null): string {
+  if (!heading) return '';
+  const label = headingLabel(heading);
+  if (/^editions\b/i.test(label)) {
+    return clean(heading.querySelector('a')?.textContent) || label;
+  }
+  return label;
 }
 
 function findAuthorNearHeading(root: Document, heading: HTMLElement | null): string {
@@ -66,7 +104,7 @@ export function extractStoryGraphBook(
   const metadata = parseOgTitle(root);
   const heading = findBookHeading(root, metadata.title);
 
-  const title = metadata.title || clean(heading?.textContent);
+  const title = metadata.title || titleFromHeading(heading);
   const author = metadata.author || findAuthorNearHeading(root, heading);
 
   const isbnCandidate = findLabeledValue(root, 'ISBN/UID');
