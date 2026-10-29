@@ -42,7 +42,7 @@ describe('collectKuEvidence', () => {
     expect(evidence.some((item) => /unlimited reading|read and listen for free|Kindle Unlimited/i.test(item))).toBe(
       true
     );
-    expect(evidence).toContain('Kindle Unlimited offer widget');
+    expect(evidence).toContain('Kindle+ offer widget');
   });
 
   it('detects the Kindle format swatch KU icon', () => {
@@ -57,16 +57,31 @@ describe('collectKuEvidence', () => {
       </div>
     `;
 
-    expect(collectKuEvidence(document)).toContain('Kindle Unlimited icon');
+    expect(collectKuEvidence(document)).toContain('Kindle+ icon');
   });
 
-  it('ignores KU mentions outside the offer area', () => {
+  it('detects Kindle+ copy in the buybox', () => {
+    document.body.innerHTML = `
+      <div id="buybox">
+        <img alt="Kindle+" src="https://m.media-amazon.com/images/I/kindle-plus.svg" />
+        <span>Included with Kindle+</span>
+      </div>
+    `;
+
+    const evidence = collectKuEvidence(document);
+    expect(evidence.some((item) => /included with kindle\+/i.test(item))).toBe(true);
+    expect(evidence).toContain('Kindle+');
+  });
+
+  it('ignores Kindle+ mentions outside the offer area', () => {
     document.body.innerHTML = `
       <div id="buybox">
         <button>Buy now for $9.99</button>
       </div>
       <div class="carousel">
+        <span>Included with Kindle+</span>
         <span>Included with kindle unlimited</span>
+        <img alt="Kindle+" src="https://example.com/other-book-kindle-plus.svg" />
         <img alt="Kindle Unlimited" src="https://example.com/other-book-ku.svg" />
       </div>
     `;

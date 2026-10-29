@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { extractStoryGraphBook, findBookHeading } from '../src/domain/storygraph-extract';
+import { extractStoryGraphBook, findBookHeading, panelInsertionPoint } from '../src/domain/storygraph-extract';
 
 const BOOK_URL = 'https://app.thestorygraph.com/books/example-book';
 
@@ -100,6 +100,48 @@ describe('extractStoryGraphBook', () => {
     `);
 
     expect(extractStoryGraphBook(document, BOOK_URL)).toBeNull();
+  });
+
+  it('uses the visible audiobook heading when the exact title is hidden', () => {
+    mount(`
+      <body>
+        <div style="display: none">
+          <h3>Into the Blue</h3>
+        </div>
+        <h3 id="visible">
+          Into the Blue
+          <span class="sr-only">Audiobook edition</span>
+          <svg><title>Audiobook edition</title></svg>
+        </h3>
+        <a href="/authors/emma-brodie">Emma Brodie</a>
+      </body>
+    `);
+
+    expect(findBookHeading(document, 'Into the Blue')?.id).toBe('visible');
+    expect(extractStoryGraphBook(document, BOOK_URL)?.title).toBe('Into the Blue');
+  });
+
+  it('reads the book title from the editions header link', () => {
+    mount(`
+      <body>
+        <div id="header-row">
+          <h1>
+            <p>Editions</p>
+            <p><a href="/books/example">Into the Blue</a></p>
+          </h1>
+          <button type="button">Add edition</button>
+        </div>
+        <a href="/authors/emma-brodie">Emma Brodie</a>
+      </body>
+    `);
+
+    const heading = findBookHeading(document, 'Into the Blue');
+    expect(heading?.tagName).toBe('H1');
+    expect(panelInsertionPoint(heading!).id).toBe('header-row');
+    expect(extractStoryGraphBook(document, BOOK_URL)).toMatchObject({
+      title: 'Into the Blue',
+      author: 'Emma Brodie',
+    });
   });
 
   it('returns null when the title cannot be found', () => {

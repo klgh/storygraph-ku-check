@@ -51,7 +51,7 @@ async function sendResult(
     if (response?.ok) return;
     await new Promise((resolve) => window.setTimeout(resolve, 500));
   }
-  console.error('Unable to return Kindle Unlimited result to the extension');
+  console.error('Unable to return Kindle+ result to the extension');
 }
 
 function waitForPage(book: BookIdentity, checkId: string): void {

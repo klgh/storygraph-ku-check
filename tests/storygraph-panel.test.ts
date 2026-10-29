@@ -22,7 +22,7 @@ describe('viewForResult', () => {
   it('uses a quiet idle state before any check', () => {
     expect(viewForResult()).toMatchObject({
       tone: 'idle',
-      checkLabel: 'Check Kindle Unlimited',
+      checkLabel: 'Check Kindle+',
       checkDisabled: false,
     });
   });
@@ -30,7 +30,7 @@ describe('viewForResult', () => {
   it('maps a successful check to the available tone', () => {
     const view = viewForResult(result('AVAILABLE'));
     expect(view.tone).toBe('available');
-    expect(view.title).toBe('Available on Kindle Unlimited');
+    expect(view.title).toBe('Available on Kindle+');
     expect(view.checkLabel).toBe('Check again');
     expect(view.amazonUrl).toContain('/dp/');
   });
