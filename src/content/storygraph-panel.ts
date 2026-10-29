@@ -15,11 +15,11 @@ export interface PanelView {
 export function statusCopy(status: KuStatus): { title: string; detail?: string } {
   switch (status) {
     case 'AVAILABLE':
-      return { title: 'Available on Kindle Unlimited' };
+      return { title: 'Available on Kindle+' };
     case 'NOT_DETECTED':
       return {
-        title: 'Kindle Unlimited was not detected',
-        detail: 'The matching Amazon page did not show Unlimited.',
+        title: 'Kindle+ was not detected',
+        detail: 'The matching Amazon page did not show Kindle+.',
       };
     case 'UNCERTAIN':
       return {
@@ -37,7 +37,7 @@ export function statusCopy(status: KuStatus): { title: string; detail?: string }
         detail: 'Try again, or open the Amazon page yourself.',
       };
     default:
-      return { title: 'Checking Kindle Unlimited' };
+      return { title: 'Checking Kindle+' };
   }
 }
 
@@ -62,9 +62,9 @@ export function viewForResult(result?: KuCheckResult): PanelView {
   if (!result) {
     return {
       tone: 'idle',
-      title: 'Kindle Unlimited not checked',
-      detail: 'See if this book is included with Unlimited.',
-      checkLabel: 'Check Kindle Unlimited',
+      title: 'Kindle+ not checked',
+      detail: 'See if this book is included with Kindle+.',
+      checkLabel: 'Check Kindle+',
       checkDisabled: false,
     };
   }
