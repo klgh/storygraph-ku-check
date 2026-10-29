@@ -2,8 +2,8 @@
 
 Last updated: October 27, 2026
 
-StoryGraph Kindle+ Checker checks whether a book you are viewing on StoryGraph appears to be included with
-Kindle+. This extension is not affiliated with, endorsed by, or sponsored by StoryGraph or Amazon.
+StoryGraph Kindle+ Checker checks whether a book you are viewing on StoryGraph appears to be included with Kindle+. This
+extension is not affiliated with, endorsed by, or sponsored by StoryGraph or Amazon.
 
 This policy explains what information the extension handles, why it is needed, where it is stored, and how you can
 remove it.
@@ -13,13 +13,13 @@ remove it.
 When you open a StoryGraph book page, the extension reads the book title, author, and ISBN shown on that page so it can
 identify the book.
 
-When you click Check Kindle+, the extension uses those details to look the book up on Amazon and reads whether
-Kindle+ appears to be offered on the matching product page.
+When you click Check Kindle+, the extension uses those details to look the book up on Amazon and reads whether Kindle+
+appears to be offered on the matching product page.
 
 ## How the data is used
 
-Book details are used only to look up Kindle+ availability and to show the result on the StoryGraph page you
-are viewing. Clicking Check again looks the book up on Amazon again.
+Book details are used only to look up Kindle+ availability and to show the result on the StoryGraph page you are
+viewing. Clicking Check again looks the book up on Amazon again.
 
 ## Storage and deletion
 
@@ -49,8 +49,8 @@ The extension requests only the access needed for this check:
 
 - **StoryGraph** — read the title, author, and ISBN of the book you are viewing, and show the check control and status
   on that page.
-- **Amazon** — after you click Check Kindle+, open an Amazon Kindle search and read whether Kindle+ is
-  offered on the matching product page.
+- **Amazon** — after you click Check Kindle+, open an Amazon Kindle search and read whether Kindle+ is offered on the
+  matching product page.
 - **On-device storage** — keep recent check results on your device, as described above.
 - **A timer** — end a check if Amazon does not finish, so the page does not stay on “Checking” indefinitely.
 

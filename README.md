@@ -16,15 +16,14 @@ Check Kindle+ availability while browsing books on StoryGraph.
 
 There is no toolbar button or popup. If the book page was already open when you installed the extension, refresh it.
 
-Returning to the same book within 24 hours shows the previous result. **Check again** always looks the book up on
-Amazon again.
+Returning to the same book within 24 hours shows the previous result. **Check again** always looks the book up on Amazon
+again.
 
 ## What to expect
 
 - Checks **Amazon.com** only. Other Amazon marketplaces are not supported.
 - **Available on Kindle+** means the matching Amazon page showed a Kindle+ offer when checked.
-- **Kindle+ was not detected** does not prove the book is unavailable. Confirm the edition and current offer
-  on Amazon.
+- **Kindle+ was not detected** does not prove the book is unavailable. Confirm the edition and current offer on Amazon.
 - A check may find no matching Kindle edition or time out. It can take up to about 45 seconds, and an incorrect edition
   can sometimes be selected.
 - Checking opens Amazon in a background tab, which closes when a result arrives. A timeout can leave that tab open.
@@ -37,9 +36,9 @@ No account is required. The extension has no analytics or advertising and sends 
 check sends book search terms (ISBN, or title and author) to Amazon.com. Check results are saved on your device; some
 records remain until you uninstall the extension. Read the [privacy policy](PRIVACY.md) for details.
 
-[Report an incorrect match, suggest a feature, or ask for help](https://github.com/klgh/storygraph-ku-check/issues).
-For an incorrect match, include the StoryGraph book URL and the Amazon URL if available. Report security
-vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+[Report an incorrect match, suggest a feature, or ask for help](https://github.com/klgh/storygraph-ku-check/issues). For
+an incorrect match, include the StoryGraph book URL and the Amazon URL if available. Report security vulnerabilities
+privately as described in [SECURITY.md](SECURITY.md).
 
 ## Local development
 
